@@ -1,0 +1,81 @@
+<script>
+    mapboxgl.accessToken = 'pk.eyJ1IjoiYWxlc3NpcyIsImEiOiJjbGcxbHBtbHQwdDU5M2RubDFodjY3a2x0In0.NXe43GdM4PJBj7ow0Dnkpw';
+
+    const map = new mapboxgl.Map({
+      container: 'map',
+      style: 'mapbox://styles/mapbox/streets-v11',
+      center: [-66.1704015, -17.3761244],
+      zoom: 12
+    });
+
+    // Enmarcar la zona del parque Lincoln
+    map.on('load', function() {
+      map.addLayer({
+        'id': 'parque-lincoln',
+        'type': 'fill',
+        'source': {
+          'type': 'geojson',
+          'data': {
+            'type': 'Feature',
+            'geometry': {
+              'type': 'Polygon',
+              'coordinates': [
+                [
+                  [-66.175513, -17.369674],
+                  [-66.175535, -17.369234],
+                  [-66.165085, -17.370074],
+                  [-66.165106, -17.370586],
+                  [-66.175513, -17.369674]
+                ]
+              ]
+            }
+          }
+        },
+        'layout': {},
+        'paint': {
+          'fill-color': '#008000',
+          'fill-opacity': 0.5
+        }
+      });
+    });
+
+    // Obtener los árboles de la base de datos en formato JSON desde PHP
+    const arboles = <?php echo json_encode($arboles); ?>;
+
+    arboles.forEach(arbol => {
+      // Convertir las coordenadas de formato 'POINT(lng lat)' a un array [lng, lat]
+      const coordinates = arbol.coordenadas.replace('POINT(', '').replace(')', '').split(' ');
+
+      // Crear un div personalizado para el ícono de árbol
+      const el = document.createElement('div');
+      el.className = 'tree-marker';
+
+      // Estilos para el ícono personalizado
+      el.style.backgroundImage = 'url("https://cdn2.iconfinder.com/data/icons/miscellaneous-iii-glyph-style/150/tree-512.png")'; // Cambia esto por el enlace de tu ícono de árbol
+      el.style.width = '30px';
+      el.style.height = '30px';
+      el.style.backgroundSize = 'cover';
+
+      // Crear marcador en el mapa con el ícono personalizado
+      const marker = new mapboxgl.Marker(el)
+        .setLngLat([parseFloat(coordinates[0]), parseFloat(coordinates[1])])
+        .addTo(map);
+
+      // Crear popup con los datos del árbol
+      const popup = new mapboxgl.Popup({
+          offset: 25
+        })
+        .setHTML(`
+                <h3>${arbol.especie}</h3>
+                <img src="${arbol.fotoUrl}" alt="Foto del árbol" style="width: 150px; height: 150px; object-fit: cover;"/>
+                <p>Edad del Árbol: ${arbol.edad} años</p>
+                <p>Altura: ${arbol.altura} metros</p>
+                <p>Diámetro del Tronco: ${arbol.diametroTronco} cm</p>
+                <p>Cuidados Necesarios: ${arbol.cuidados}</p>
+                <p>Estado del Árbol: ${arbol.estado}</p>
+            `);
+
+      // Asignar popup al marcador
+      marker.setPopup(popup);
+    });
+  </script>

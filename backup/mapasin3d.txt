@@ -1,0 +1,63 @@
+mapboxgl.accessToken = 'pk.eyJ1IjoiYWxlc3NpcyIsImEiOiJjbGcxbHBtbHQwdDU5M2RubDFodjY3a2x0In0.NXe43GdM4PJBj7ow0Dnkpw';
+
+const map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/outdoors-v11',
+    center: [-66.1704015, -17.3761244],
+    zoom: 15,
+    pitch: 60,
+    bearing: -17.6
+});
+
+map.on('load', function () {
+    // Obtener los datos de los árboles desde PHP
+    const arboles = <?php echo json_encode($arboles); ?>;
+
+    arboles.forEach(arbol => {
+        const coordinates = arbol.coordenadas.replace('POINT(', '').replace(')', '').split(' ');
+
+        // Crear un div para el marcador personalizado
+        const el = document.createElement('div');
+        el.className = 'tree-marker';
+
+        // Asignar estilo según la categoría o estado
+        switch (arbol.estado.toLowerCase()) {
+            case 'peligrosos':
+                el.style.border = '3px solid red'; // Árbol peligroso
+                break;
+            case 'protegido':
+                el.style.border = '3px solid yellow'; // Árbol protegido
+                break;
+            case 'nativo':
+                el.style.border = '3px solid green'; // Árbol nativo
+                break;
+            default:
+                el.style.border = '3px solid gray'; // Estado no especificado
+        }
+
+        el.style.backgroundImage = 'url("https://cdn2.iconfinder.com/data/icons/miscellaneous-iii-glyph-style/150/tree-512.png")';
+        el.style.width = '30px';
+        el.style.height = '30px';
+        el.style.backgroundSize = 'cover';
+
+        // Crear marcador en el mapa
+        const marker = new mapboxgl.Marker(el)
+            .setLngLat([parseFloat(coordinates[0]), parseFloat(coordinates[1])])
+            .addTo(map);
+
+        // Crear popup con información del árbol
+        const popup = new mapboxgl.Popup({ offset: 25 })
+            .setHTML(`
+                <h3>${arbol.especie}</h3>
+                <img src="${arbol.fotoUrl}" alt="Foto del árbol" style="width: 150px; height: 150px; object-fit: cover;" />
+                <p>Edad del Árbol: ${arbol.edad} años</p>
+                <p>Altura: ${arbol.altura} metros</p>
+                <p>Diámetro del Tronco: ${arbol.diametroTronco} cm</p>
+                <p>Cuidados Necesarios: ${arbol.cuidados}</p>
+                <p>Categoría: ${arbol.estado}</p>
+                <img src="${arbol.qrUrl}" alt="QR del árbol" style="width: 100px; height: 100px;" />
+            `);
+
+        marker.setPopup(popup);
+    });
+});

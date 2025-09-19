@@ -1,0 +1,26 @@
+DROP TABLE IF EXISTS `usuarios`;
+CREATE TABLE IF NOT EXISTS `usuarios` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `email` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+DROP TABLE IF EXISTS `usuarios_registrados`;
+CREATE TABLE IF NOT EXISTS `usuarios_registrados` (
+  `id` int UNSIGNED NOT NULL AUTO_INCREMENT,
+  `nombre` varchar(50) NOT NULL,
+  `apellido_paterno` varchar(50) NOT NULL,
+  `apellido_materno` varchar(50) DEFAULT NULL,
+  `fecha_nacimiento` date NOT NULL,
+  `genero` enum('Masculino','Femenino','Otro') NOT NULL,
+  `telefono` varchar(15) NOT NULL,
+  `direccion` varchar(255) NOT NULL,
+  `correo` varchar(50) NOT NULL,
+  `numero_identificacion` varchar(20) NOT NULL,
+  `foto_perfil` varchar(255) DEFAULT NULL,
+  `documentos_identificacion` varchar(255) DEFAULT NULL,
+  `usuario` varchar(50) NOT NULL,
+  `contrasena` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

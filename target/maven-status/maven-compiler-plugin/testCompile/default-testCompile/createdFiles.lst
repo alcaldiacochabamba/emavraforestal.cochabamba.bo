@@ -1,0 +1,3 @@
+com\skygreen\pages\AdministradorPage.class
+com\skygreen\runners\TestRunner.class
+com\skygreen\stepdefinitions\AdministradorSteps.class

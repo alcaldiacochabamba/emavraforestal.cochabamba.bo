@@ -1,0 +1,18 @@
+# 1. Verificar estructura del proyecto
+dir
+
+# 2. Primero ejecuta SOLO los tests (sin verify)
+mvn clean test
+
+# 3. Verificar archivos generados (Windows PowerShell)
+dir target\cucumber-reports\
+
+# 4. Si hay archivos, ejecutar verify
+mvn verify
+
+# 5. SOLUCIÓN ALTERNATIVA (si hay problemas con comillas)
+mvn clean test '-Dcucumber.plugin=pretty,html:target/cucumber-reports,json:target/cucumber-reports/Cucumber.json'
+
+mvn clean test
+
+mvn clean verify

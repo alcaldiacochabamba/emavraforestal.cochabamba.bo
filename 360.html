@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <title>SkyGreen - Visualizador Interactivo de Árbol</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background: #0a2f1d;
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header {
+      background: #094a2c;
+      padding: 15px;
+      text-align: center;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .main-container {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      padding: 20px;
+    }
+
+    @media (min-width: 768px) {
+      .main-container {
+        flex-direction: row;
+      }
+    }
+
+    .image-container {
+      flex: 2;
+      position: relative;
+      overflow: hidden;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      background: #0d402a;
+      min-height: 300px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .tree-image {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      transition: transform 0.5s ease;
+    }
+
+    .hotspot {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      background: rgba(255, 165, 0, 0.8);
+      border: 2px solid white;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-weight: bold;
+      color: white;
+      transition: all 0.3s;
+      z-index: 10;
+    }
+
+    .hotspot:hover {
+      transform: translate(-50%, -50%) scale(1.2);
+      background: orange;
+    }
+
+    .stats-container {
+      flex: 1;
+      padding: 20px;
+      background: rgba(9, 74, 44, 0.7);
+      border-radius: 10px;
+      margin-top: 20px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    @media (min-width: 768px) {
+      .stats-container {
+        margin-top: 0;
+        margin-left: 20px;
+      }
+    }
+
+    .stat-box {
+      background: rgba(7, 56, 33, 0.8);
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+      transition: transform 0.3s, background 0.3s;
+    }
+
+    .stat-box h3 {
+      font-size: 18px;
+      margin-bottom: 10px;
+      color: #a4e6c2;
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    .stat-box.active {
+      background: rgba(16, 120, 73, 0.8);
+      transform: translateX(10px);
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      padding: 15px;
+      background: #094a2c;
+      margin-top: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .control-btn {
+      background: #0d6e40;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      margin: 0 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s;
+    }
+
+    .control-btn:hover {
+      background: #12a05c;
+      transform: translateY(-3px);
+    }
+
+    .tooltip {
+      position: absolute;
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 10px;
+      border-radius: 5px;
+      z-index: 20;
+      max-width: 250px;
+      display: none;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    }
+
+    .tooltip h4 {
+      color: #a4e6c2;
+      margin-bottom: 5px;
+    }
+
+    .chart-container {
+      height: 220px;
+      margin-top: 20px;
+      background: rgba(7, 56, 33, 0.8);
+      border-radius: 8px;
+      padding: 15px;
+    }
+
+    #co2-chart {
+      width: 100%;
+      height: 190px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="header">
+    <h1>SkyGreen - Visualizador Interactivo de Árbol</h1>
+  </div>
+
+  <div class="main-container">
+    <div class="image-container" id="image-container">
+      <!-- Imagen principal -->
+      <img src="/img/arbolgoogle.jpg" alt="Árbol" class="tree-image" id="tree-image">
+
+      <!-- Puntos interactivos -->
+      <div class="hotspot" style="top: 25%; left: 60%;" data-info="copa">1</div>
+      <div class="hotspot" style="top: 50%; left: 48%;" data-info="tronco">2</div>
+      <div class="hotspot" style="top: 80%; left: 55%;" data-info="raices">3</div>
+
+      <!-- Tooltip -->
+      <div class="tooltip" id="tooltip"></div>
+    </div>
+
+    <div class="stats-container">
+      <h2>Datos del Árbol</h2>
+      <p>Especie: Roble Común (Quercus robur)</p>
+      <div id="stats-boxes">
+        <div class="stat-box" data-stat="altura">
+          <h3>Altura</h3>
+          <div class="stat-value">15.2 m</div>
+          <div>Crecimiento anual: +0.5m</div>
+        </div>
+
+        <div class="stat-box" data-stat="diametro">
+          <h3>Diámetro del Tronco</h3>
+          <div class="stat-value">63 cm</div>
+          <div>Edad estimada: 32 años</div>
+        </div>
+
+        <div class="stat-box" data-stat="co2">
+          <h3>Absorción CO₂</h3>
+          <div class="stat-value">22 kg/año</div>
+          <div>Total acumulado: 704 kg</div>
+        </div>
+
+        <div class="stat-box" data-stat="salud">
+          <h3>Índice de Salud</h3>
+          <div class="stat-value">92%</div>
+          <div>Última evaluación: Abr 2025</div>
+        </div>
+      </div>
+
+      <!-- Gráfico de CO2 -->
+      <div class="chart-container">
+        <h3>Absorción de CO₂ (últimos 5 años)</h3>
+        <canvas id="co2-chart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="control-btn" id="btn-vista-general">Vista General</button>
+    <button class="control-btn" id="btn-copa">Copa</button>
+    <button class="control-btn" id="btn-tronco">Tronco</button>
+    <button class="control-btn" id="btn-raices">Raíces</button>
+  </div>
+
+  <!-- Cargar Chart.js para gráficos -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      // Variables para las imágenes
+      const treeViews = {
+        'general': '/img/arbolgoogle.jpg',
+        'copa': '/img/arbol_copa.png',
+        'tronco': '/img/arbol_tronco.png',
+        'raices': '/img/arbol_raices.png'
+      };
+
+      // Elemento de imagen
+      const treeImage = document.getElementById('tree-image');
+
+      // Información para tooltips
+      const tooltipInfo = {
+        'copa': {
+          title: 'Copa del Árbol',
+          content: 'Diámetro de copa: 8.3m<br>Densidad foliar: Alta<br>Producción de oxígeno: 6.4 kg/día<br>Área de sombra: 54m²'
+        },
+        'tronco': {
+          title: 'Tronco',
+          content: 'Altura del tronco: 5.8m<br>Diámetro: 63cm<br>Densidad de madera: 720 kg/m³<br>Biomasa: 1,645 kg'
+        },
+        'raices': {
+          title: 'Sistema Radicular',
+          content: 'Profundidad: 2.7m<br>Extensión radial: 9.5m<br>Volumen de suelo explorado: 189m³<br>Fijación de nitrógeno: 3.2 kg/año'
+        }
+      };
+
+      // Inicializar tooltip
+      const tooltip = document.getElementById('tooltip');
+
+      // Función para mostrar tooltip
+      function showTooltip(info, x, y) {
+        tooltip.innerHTML = `<h4>${tooltipInfo[info].title}</h4><p>${tooltipInfo[info].content}</p>`;
+        tooltip.style.left = `${x}px`;
+        tooltip.style.top = `${y}px`;
+        tooltip.style.display = 'block';
+      }
+
+      // Función para ocultar tooltip
+      function hideTooltip() {
+        tooltip.style.display = 'none';
+      }
+
+      // Agregar eventos a hotspots
+      const hotspots = document.querySelectorAll('.hotspot');
+      hotspots.forEach(spot => {
+        spot.addEventListener('mouseenter', function (e) {
+          const info = this.getAttribute('data-info');
+          const rect = this.getBoundingClientRect();
+          const x = rect.right + 10;
+          const y = rect.top;
+          showTooltip(info, x, y);
+
+          // Resaltar el stat-box correspondiente
+          highlightStatBox(info);
+        });
+
+        spot.addEventListener('mouseleave', function () {
+          hideTooltip();
+          resetStatBoxes();
+        });
+
+        spot.addEventListener('click', function () {
+          const info = this.getAttribute('data-info');
+          changeView(info);
+        });
+      });
+
+      // Función para resaltar un stat-box
+      function highlightStatBox(type) {
+        resetStatBoxes();
+
+        // Mapeo entre tipos de hotspot y stat-boxes
+        const mapping = {
+          'copa': 'altura',
+          'tronco': 'diametro',
+          'raices': 'co2'
+        };
+
+        if (mapping[type]) {
+          const statBox = document.querySelector(`.stat-box[data-stat="${mapping[type]}"]`);
+          if (statBox) {
+            statBox.classList.add('active');
+          }
+        }
+      }
+
+      // Función para resetear stat-boxes
+      function resetStatBoxes() {
+        document.querySelectorAll('.stat-box').forEach(box => {
+          box.classList.remove('active');
+        });
+      }
+
+      // Cambiar vista del árbol
+      function changeView(view) {
+        if (treeViews[view]) {
+          treeImage.src = treeViews[view];
+
+          // Ajustar visibilidad de hotspots según la vista
+          hotspots.forEach(spot => {
+            if (view === 'general') {
+              spot.style.display = 'flex';
+            } else if (spot.getAttribute('data-info') === view) {
+              spot.style.display = 'flex';
+            } else {
+              spot.style.display = 'none';
+            }
+          });
+
+          // Resaltar el stat-box correspondiente
+          highlightStatBox(view);
+        }
+      }
+
+      // Eventos para botones de control
+      document.getElementById('btn-vista-general').addEventListener('click', () => changeView('general'));
+      document.getElementById('btn-copa').addEventListener('click', () => changeView('copa'));
+      document.getElementById('btn-tronco').addEventListener('click', () => changeView('tronco'));
+      document.getElementById('btn-raices').addEventListener('click', () => changeView('raices'));
+
+      // Inicializar el gráfico de CO2
+      const ctx = document.getElementById('co2-chart').getContext('2d');
+      const co2Chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ['2021', '2022', '2023', '2024', '2025'],
+          datasets: [{
+            label: 'Absorción de CO₂ (kg/año)',
+            data: [19.5, 20.3, 21.1, 21.6, 22.0],
+            fill: true,
+            backgroundColor: 'rgba(75, 192, 122, 0.2)',
+            borderColor: 'rgba(75, 192, 122, 1)',
+            tension: 0.4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: false,
+              min: 19,
+              grid: {
+                color: 'rgba(255, 255, 255, 0.1)'
+              },
+              ticks: {
+                color: 'rgba(255, 255, 255, 0.7)'
+              }
+            },
+            x: {
+              grid: {
+                color: 'rgba(255, 255, 255, 0.1)'
+              },
+              ticks: {
+                color: 'rgba(255, 255, 255, 0.7)'
+              }
+            }
+          },
+          plugins: {
+            legend: {
+              labels: {
+                color: 'rgba(255, 255, 255, 0.7)'
+              }
+            }
+          }
+        }
+      });
+
+      // Zoom con rueda del ratón
+      let scale = 1;
+      document.getElementById('image-container').addEventListener('wheel', function (e) {
+        e.preventDefault();
+
+        if (e.deltaY < 0) {
+          // Zoom in
+          if (scale < 2) scale += 0.1;
+        } else {
+          // Zoom out
+          if (scale > 0.5) scale -= 0.1;
+        }
+
+        treeImage.style.transform = `scale(${scale})`;
+      });
+    });
+  </script>
+</body>
+
+</html>

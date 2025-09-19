@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa de Árboles</title>
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+        .marker {
+            background-color: #007BFF;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid white;
+            cursor: pointer;
+        }
+        button {
+            font-size: 14px;
+            font-family: Arial, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <script>
+        mapboxgl.accessToken = 'pk.eyJ1IjoiYWxlc3NpcyIsImEiOiJjbGcxbHBtbHQwdDU5M2RubDFodjY3a2x0In0.NXe43GdM4PJBj7ow0Dnkpw';
+
+        // Crear el mapa
+        const map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/streets-v11',
+            center: [-66.1704015, -17.3761244],
+            zoom: 12
+        });
+
+        const arboles = [];
+
+        // Mostrar mensaje de consentimiento inicial
+        if (!confirm("Al agregar un árbol, aceptas que los datos sean almacenados en nuestro sistema de forma anónima para fines educativos y de conservación. ¿Aceptas?")) {
+            alert("No se pueden agregar árboles sin tu consentimiento.");
+            throw new Error("Consentimiento no otorgado.");
+        }
+
+        // Botón para política de privacidad
+        const privacidadButton = document.createElement('button');
+        privacidadButton.textContent = "Política de Privacidad";
+        privacidadButton.style.position = "absolute";
+        privacidadButton.style.top = "10px";
+        privacidadButton.style.right = "10px";
+        privacidadButton.style.padding = "10px";
+        privacidadButton.style.backgroundColor = "#007BFF";
+        privacidadButton.style.color = "white";
+        privacidadButton.style.border = "none";
+        privacidadButton.style.cursor = "pointer";
+
+        privacidadButton.addEventListener('click', () => {
+            alert("Nuestra política de privacidad asegura que tus datos sean tratados de forma anónima y segura. Para más información, visita nuestro sitio web.");
+        });
+        document.body.appendChild(privacidadButton);
+
+        // Redondear coordenadas para anonimización
+        const redondearCoordenadas = (valor) => Math.round(valor * 10000) / 10000;
+
+        // Validar URL para evitar inyecciones maliciosas
+        const validarURL = (url) => {
+            const urlRegex = /^(https?:\/\/)?([\w\-]+\.)+[a-z]{2,6}\/?([\w\-._~:/?#[\]@!$&'()*+,;=]*)?$/i;
+            return urlRegex.test(url);
+        };
+
+        // Evento para agregar árboles al mapa
+        map.on('click', (e) => {
+            // Pedir datos al usuario con validaciones básicas
+            const especie = prompt("Especie del Árbol");
+            if (!especie) {
+                alert("Especie es obligatoria.");
+                return;
+            }
+
+            const edad = parseInt(prompt("Edad del Árbol (en años)"));
+            if (isNaN(edad) || edad <= 0) {
+                alert("Edad inválida.");
+                return;
+            }
+
+            const cuidados = prompt("Cuidados Necesarios");
+            if (!cuidados) {
+                alert("Cuidados son obligatorios.");
+                return;
+            }
+
+            const estado = prompt("Estado del Árbol (protegido, nativo, peligroso)");
+            if (!["protegido", "nativo", "peligroso"].includes(estado.toLowerCase())) {
+                alert("Estado inválido. Opciones: protegido, nativo, peligroso.");
+                return;
+            }
+
+            const fotoUrl = prompt("URL de la foto del Árbol");
+            if (!validarURL(fotoUrl)) {
+                alert("URL de la foto no válida.");
+                return;
+            }
+
+            const altura = parseFloat(prompt("Altura del Árbol en metros"));
+            if (isNaN(altura) || altura <= 0) {
+                alert("Altura inválida.");
+                return;
+            }
+
+            const diametroTronco = parseFloat(prompt("Diámetro del Tronco en cm"));
+            if (isNaN(diametroTronco) || diametroTronco <= 0) {
+                alert("Diámetro inválido.");
+                return;
+            }
+
+            const newArbol = {
+                especie,
+                edad,
+                cuidados,
+                estado,
+                fotoUrl,
+                altura,
+                diametroTronco,
+                coordenadas: [redondearCoordenadas(e.lngLat.lng), redondearCoordenadas(e.lngLat.lat)]
+            };
+
+            arboles.push(newArbol);
+
+            // Crear marcador
+            const el = document.createElement('div');
+            el.className = 'marker';
+
+            const marker = new mapboxgl.Marker(el)
+                .setLngLat(newArbol.coordenadas)
+                .addTo(map);
+
+            // Crear popup con información del árbol
+            const popup = new mapboxgl.Popup({ offset: 25, closeOnClick: false })
+                .setHTML(`
+                    <h3>${newArbol.especie}</h3>
+                    <img src="${newArbol.fotoUrl}" alt="Foto del árbol" style="width: 150px; height: 150px; object-fit: cover;"/>
+                    <p><strong>Edad:</strong> ${newArbol.edad} años</p>
+                    <p><strong>Altura:</strong> ${newArbol.altura} metros</p>
+                    <p><strong>Diámetro del Tronco:</strong> ${newArbol.diametroTronco} cm</p>
+                    <p><strong>Cuidados:</strong> ${newArbol.cuidados}</p>
+                    <p><strong>Estado:</strong> ${newArbol.estado}</p>
+                `);
+
+            marker.setPopup(popup);
+
+            // Mostrar popup al pasar el mouse
+            marker.getElement().addEventListener('mouseenter', () => {
+                marker.togglePopup();
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+"Story","Title","Result","Date","Stability","Duration (s)"
+"Funcionalidad del Administrador de Árboles","Verificar que la página del administrador se carga correctamente","SUCCESS","2025-06-21T14:10:21.2070301-04:00[America/La_Paz]","0.0","4.75"
+"Funcionalidad del Administrador de Árboles","Llenar formulario de árbol con datos válidos","SUCCESS","2025-06-21T14:10:25.9779493-04:00[America/La_Paz]","0.0","4.45"
+"Funcionalidad del Administrador de Árboles","Interactuar con el mapa","SUCCESS","2025-06-21T14:10:30.4339467-04:00[America/La_Paz]","0.0","3.47"

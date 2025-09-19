@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>SkyGreen 🌳</title>
+  <script src="https://unpkg.com/photo-sphere-viewer@5.0.4/dist/photo-sphere-viewer.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/photo-sphere-viewer@5.0.4/dist/photo-sphere-viewer.min.css" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #e7f5e6;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #2d6a4f;
+    }
+
+    #contenedor {
+      max-width: 800px;
+      margin: 0 auto;
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      margin-bottom: 20px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+
+    button {
+      padding: 10px 20px;
+      background-color: #40916c;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    button:hover {
+      background-color: #2d6a4f;
+    }
+
+    #viewer {
+      width: 100%;
+      height: 400px;
+      margin-top: 20px;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    #skygreen-response p {
+      font-size: 16px;
+    }
+
+    .estadisticas {
+      margin-top: 30px;
+      background: #d8f3dc;
+      padding: 15px;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div id="contenedor">
+    <h1>🌳 SkyGreen</h1>
+    <p>Consulta sobre especies de árboles en Bolivia:</p>
+    <input type="text" id="skygreen-question" placeholder="Ej. ¿Qué es el toborochi?" />
+    <button onclick="askSkyGreen()">Consultar</button>
+
+    <div id="skygreen-response"></div>
+    <div id="viewer"></div>
+
+    <div class="estadisticas">
+      <h3>📊 Datos Forestales en Bolivia</h3>
+      <ul>
+        <li>🌲 Superficie boscosa: 52% del territorio nacional</li>
+        <li>🌱 Especies endémicas: +200</li>
+        <li>🌍 Aporte a oxígeno mundial: 2%</li>
+        <li>🌳 Programas de reforestación activos: 36</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    const imagenes360 = {
+      "Ceiba speciosa": "https://photo-sphere-viewer-data.netlify.app/assets/sphere.jpg"
+    };
+
+    async function askSkyGreen() {
+      const pregunta = document.getElementById("skygreen-question").value;
+      const especie = corregirNombreEspecie(extractSpecies(pregunta));
+
+      document.getElementById("skygreen-response").innerHTML = "🔍 Buscando información...";
+      document.getElementById("viewer").innerHTML = "";
+
+      try {
+        const wikiRes = await fetch(`https://es.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(especie)}`);
+        const wikiData = await wikiRes.json();
+
+        const resumen = wikiData.extract || "🌱 No se encontró información sobre esa especie.";
+        document.getElementById("skygreen-response").innerHTML = `<p><strong>${especie}:</strong> ${resumen}</p>`;
+
+        // Mostrar imagen 360 si existe
+        if (imagenes360[especie]) {
+          const viewer = new PhotoSphereViewer.Viewer({
+            container: document.getElementById('viewer'),
+            panorama: imagenes360[especie],
+            loadingImg: 'https://photo-sphere-viewer-data.netlify.app/assets/photosphere-logo.gif',
+            defaultYaw: '130deg',
+          });
+        } else {
+          document.getElementById("viewer").innerHTML = "<p>❌ No hay imagen 360° para esta especie.</p>";
+        }
+      } catch (error) {
+        document.getElementById("skygreen-response").innerHTML = `<p>❌ Error al buscar información.</p>`;
+        console.error(error);
+      }
+    }
+
+    function extractSpecies(texto) {
+      let cleaned = texto.toLowerCase();
+      const stopWords = ['qué', 'es', 'el', 'la', 'un', 'una', 'árbol', 'sobre', 'quiero', 'saber', 'del', 'de', 'en', 'bolivia', 'háblame', 'como', 'cómo'];
+      stopWords.forEach(w => cleaned = cleaned.replace(w, ''));
+      return cleaned.trim().replace(/\s+/g, ' ');
+    }
+
+    function corregirNombreEspecie(nombre) {
+      const mapa = {
+        "lluvia dorada": "Cassia fistula",
+        "tajibo": "Handroanthus impetiginosus",
+        "algarrobo": "Prosopis alba",
+        "copaibo": "Copaifera langsdorffii",
+        "toborochi": "Ceiba speciosa",
+        "palo santo": "Bursera graveolens"
+      };
+      return mapa[nombre] || nombre;
+    }
+  </script>
+</body>
+</html>

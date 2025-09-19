@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="description" content="SkyGreen - Protección y conservación del medio ambiente en Bolivia" />
+    <meta name="author" content="SkyGreen Team" />
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+    
+    <!-- Boxicons -->
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+    
+    <!-- AOS Animation Library -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        :root {
+            --primary-green: #333940;
+            --light-green: #333940;
+            --accent-green: #333940;
+            --bg-green: #e8f5e8;
+            --text-dark: #2c3e50;
+            --text-light: #7f8c8d;
+            --white: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: var(--text-dark);
+            overflow-x: hidden;
+        }
+
+        /* Navbar Styles */
+        .navbar {
+            background: rgba(255, 255, 255, 0.95) !important;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 20px rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            padding: 1rem 0;
+        }
+
+        .navbar-brand {
+            font-size: 1.8rem !important;
+            font-weight: 700;
+            color: var(--primary-green) !important;
+            display: flex;
+            align-items: center;
+        }
+
+        .navbar-brand i {
+            color: var(--light-green);
+            margin-left: 0.5rem;
+            font-size: 1.5rem;
+        }
+
+        .nav-link {
+            font-weight: 500;
+            margin: 0 0.5rem;
+            transition: all 0.3s ease;
+            color: var(--text-dark) !important;
+        }
+
+        .nav-link:hover {
+            color: var(--light-green) !important;
+            transform: translateY(-2px);
+        }
+
+        .btn-custom {
+            background: linear-gradient(135deg, var(--light-green), var(--accent-green));
+            border: none;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .btn-custom:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
+            color: white;
+        }
+
+        /* Hero Section */
+        .hero-section {
+            position: relative;
+            height: 100vh;
+            background: linear-gradient(135deg, rgba(45, 90, 39, 0.8), rgba(76, 175, 80, 0.6)), url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="%234caf50" fill-opacity="0.1" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,122.7C672,117,768,139,864,138.7C960,139,1056,117,1152,117.3C1248,117,1344,139,1392,149.3L1440,160L1440,0L1392,0C1344,0,1248,0,1152,0C1056,0,960,0,864,0C768,0,672,0,576,0C480,0,384,0,288,0C192,0,96,0,48,0L0,0Z"></path></svg>');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .hero-content {
+            text-align: center;
+            color: white;
+            z-index: 2;
+        }
+
+        .hero-title {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .hero-subtitle {
+            font-size: 1.3rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* Stats Section */
+        .stats-section {
+            padding: 5rem 0;
+            background: var(--bg-green);
+        }
+
+        .stat-card {
+            background: white;
+            padding: 3rem 2rem;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-number {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--light-green);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        /* Content Sections */
+        .content-section {
+            padding: 5rem 0;
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-green);
+            margin-bottom: 3rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: var(--light-green);
+            border-radius: 2px;
+        }
+
+        .law-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+            border-left: 5px solid var(--light-green);
+            transition: all 0.3s ease;
+        }
+
+        .law-card:hover {
+            transform: translateX(10px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+        }
+
+        .law-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--primary-green);
+            margin-bottom: 0.5rem;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .info-card {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            border-top: 4px solid var(--light-green);
+        }
+
+        .info-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
+        }
+
+        .info-icon {
+            font-size: 3rem;
+            color: var(--light-green);
+            margin-bottom: 1rem;
+        }
+
+        .info-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--primary-green);
+        }
+
+        .info-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .info-list li {
+            padding: 0.5rem 0;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .info-list li::before {
+            content: '✓';
+            color: var(--light-green);
+            font-weight: bold;
+            margin-right: 0.5rem;
+            margin-top: 0.1rem;
+        }
+
+        /* Organizations Section */
+        .organizations-section {
+            padding: 5rem 0;
+            background: linear-gradient(135deg, var(--bg-green), rgba(255, 255, 255, 0.5));
+        }
+
+        .org-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            height: 100%;
+        }
+
+        .org-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .org-logo {
+            max-height: 80px;
+            margin-bottom: 1.5rem;
+            filter: grayscale(100%);
+            transition: all 0.3s ease;
+        }
+
+        .org-card:hover .org-logo {
+            filter: grayscale(0%);
+        }
+
+        .org-name {
+            font-weight: 600;
+            color: var(--primary-green);
+            font-size: 1.1rem;
+        }
+
+        /* Footer */
+        footer {
+            background: linear-gradient(135deg, var(--primary-green), var(--light-green));
+            color: white;
+            padding: 3rem 0 1rem;
+        }
+
+        .footer-content {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .footer-link {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .footer-link:hover {
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .footer-social {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .social-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .social-icon:hover {
+            background: white;
+            color: var(--primary-green);
+            transform: translateY(-3px);
+        }
+
+        /* Floating Action Button */
+        .fab {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--light-green), var(--accent-green));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            z-index: 1000;
+        }
+
+        .fab:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 35px rgba(76, 175, 80, 0.6);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.5rem;
+            }
+            
+            .hero-subtitle {
+                font-size: 1.1rem;
+            }
+            
+            .hero-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .section-title {
+                font-size: 2rem;
+            }
+            
+            .stat-number {
+                font-size: 2.5rem;
+            }
+        }
+
+        /* Custom Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fade-in {
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        /* Scroll Progress Bar */
+        .scroll-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 0%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--light-green), var(--accent-green));
+            z-index: 9999;
+            transition: width 0.1s ease;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Scroll Progress Bar -->
+    <div class="scroll-progress" id="scrollProgress"></div>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="#top">
+                SkyGreen<i class="bx bxs-tree-alt"></i>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.php">Volver Al Inicio</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section" id="top">
+        <div class="container">
+            <div class="hero-content" data-aos="fade-up">
+                <h1 class="hero-title">Protegemos tu Futuro Verde</h1>
+                <p class="hero-subtitle">Conoce las leyes ambientales de Bolivia y únete a la conservación</p>
+                <div class="hero-buttons">
+                    <a href="#leyes" class="btn btn-custom btn-lg">Explorar Normativas</a>
+                    <a href="#acciones" class="btn btn-outline-light btn-lg">Ver Acciones</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
+                    <div class="stat-card">
+                        <div class="stat-number" id="stat1">0</div>
+                        <div class="stat-label">Árboles Plantados</div>
+                    </div>
+                </div>
+                <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
+                    <div class="stat-card">
+                        <div class="stat-number" id="stat2">0</div>
+                        <div class="stat-label">Hectáreas Reforestadas</div>
+                    </div>
+                </div>
+                <div class="col-md-4" data-aos="fade-up" data-aos-delay="300">
+                    <div class="stat-card">
+                        <div class="stat-number" id="stat3">0</div>
+                        <div class="stat-label">Voluntarios Activos</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Laws Section -->
+    <section id="leyes" class="content-section">
+        <div class="container">
+            <h2 class="section-title" data-aos="fade-up">Marco Legal Ambiental</h2>
+            <div class="row">
+                <div class="col-lg-6" data-aos="fade-right">
+                    <div class="law-card">
+                        <div class="law-title">Ley N° 1333 de Medio Ambiente (1992)</div>
+                        <p>Establece las bases fundamentales para la conservación de recursos naturales, incluyendo la protección de árboles y ecosistemas forestales en territorio boliviano.</p>
+                    </div>
+                </div>
+                <div class="col-lg-6" data-aos="fade-left">
+                    <div class="law-card">
+                        <div class="law-title">Ley N° 300 (Ley de la Madre Tierra)</div>
+                        <p>Reconoce los derechos inherentes de la naturaleza y promueve activamente la reforestación y conservación como pilares del desarrollo sostenible.</p>
+                    </div>
+                </div>
+                <div class="col-lg-6" data-aos="fade-right">
+                    <div class="law-card">
+                        <div class="law-title">Decreto Supremo N° 24453</div>
+                        <p>Regula la gestión integral y el uso sostenible de recursos forestales, estableciendo lineamientos claros para la conservación del bosque.</p>
+                    </div>
+                </div>
+                <div class="col-lg-6" data-aos="fade-left">
+                    <div class="law-card">
+                        <div class="law-title">Ordenanzas Municipales</div>
+                        <p>Normativas locales específicas que regulan la tala, poda y mantenimiento de áreas verdes urbanas y periurbanas.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Actions Section -->
+    <section id="acciones" class="content-section" style="background: var(--bg-green);">
+        <div class="container">
+            <h2 class="section-title" data-aos="fade-up">Acciones y Responsabilidades</h2>
+            <div class="info-grid">
+                <div class="info-card" data-aos="fade-up" data-aos-delay="100">
+                    <i class="bx bx-x-circle info-icon"></i>
+                    <h3 class="info-title">Prohibiciones</h3>
+                    <ul class="info-list">
+                        <li>Tala sin permiso ambiental</li>
+                        <li>Quemas que afecten áreas forestales</li>
+                        <li>Eliminación de árboles nativos protegidos</li>
+                        <li>Daño intencional a especies endémicas</li>
+                    </ul>
+                </div>
+                
+                <div class="info-card" data-aos="fade-up" data-aos-delay="200">
+                    <i class="bx bx-check-circle info-icon"></i>
+                    <h3 class="info-title">Acciones Permitidas</h3>
+                    <ul class="info-list">
+                        <li>Reforestación con especies nativas</li>
+                        <li>Poda autorizada por seguridad</li>
+                        <li>Participación en programas ambientales</li>
+                        <li>Educación y concienciación comunitaria</li>
+                    </ul>
+                </div>
+                
+                <div class="info-card" data-aos="fade-up" data-aos-delay="300">
+                    <i class="bx bx-lightbulb info-icon"></i>
+                    <h3 class="info-title">Recomendaciones</h3>
+                    <ul class="info-list">
+                        <li>Consultar autoridades ambientales</li>
+                        <li>Registrar árboles plantados</li>
+                        <li>Participar en campañas locales</li>
+                        <li>Promover educación ambiental</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Organizations Section -->
+    <section id="organizaciones" class="organizations-section">
+        <div class="container">
+            <h2 class="section-title" data-aos="fade-up">Nuestros Aliados Estratégicos</h2>
+            <div class="row">
+                <div class="col-md-4" data-aos="zoom-in" data-aos-delay="100">
+                    <div class="org-card">
+                        <div class="org-logo" style="background: #4caf50; color: white; width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; font-weight: bold;">EMAVRA</div>
+                        <div class="org-name">EMAVRA</div>
+                        <p class="mt-2 text-muted">Empresa Municipal de Áreas Verdes, Recreación y Ambiente</p>
+                    </div>
+                </div>
+                <div class="col-md-4" data-aos="zoom-in" data-aos-delay="200">
+                    <div class="org-card">
+                        <div class="org-logo" style="background: #2196f3; color: white; width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; font-weight: bold;">FNA</div>
+                        <div class="org-name">Fondo Nacional de Ambiente</div>
+                        <p class="mt-2 text-muted">Financiamiento para proyectos de conservación ambiental</p>
+                    </div>
+                </div>
+                <div class="col-md-4" data-aos="zoom-in" data-aos-delay="300">
+                    <div class="org-card">
+                        <div class="org-logo" style="background: #ff9800; color: white; width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; font-weight: bold;">MMA</div>
+                        <div class="org-name">Ministerio de Medio Ambiente</div>
+                        <p class="mt-2 text-muted">Autoridad nacional en políticas ambientales</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section 
+    <section id="contacto" class="content-section">
+        <div class="container">
+            <h2 class="section-title" data-aos="fade-up">Únete a Nuestra Misión</h2>
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="text-center" data-aos="fade-up" data-aos-delay="100">
+                        <p class="lead mb-4">¿Listo para hacer la diferencia? Regístrate y sé parte del cambio que Bolivia necesita.</p>
+                        <div class="d-flex justify-content-center gap-3 flex-wrap">
+                            <a href="#" class="btn btn-custom btn-lg">
+                                <i class="bx bx-user-plus me-2"></i>Registrarse
+                            </a>
+                            <a href="#" class="btn btn-outline-success btn-lg">
+                                <i class="bx bx-phone me-2"></i>Contactar
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>-->
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-links">
+                    <a href="#" class="footer-link">Política de Privacidad</a>
+                    <a href="#" class="footer-link">Términos de Uso</a>
+                    <a href="#" class="footer-link">Contacto</a>
+                    <a href="#" class="footer-link">FAQ</a>
+                </div>
+                <div class="footer-social">
+                    <a href="#" class="social-icon"><i class="bx bxl-facebook"></i></a>
+                    <a href="#" class="social-icon"><i class="bx bxl-twitter"></i></a>
+                    <a href="#" class="social-icon"><i class="bx bxl-instagram"></i></a>
+                    <a href="#" class="social-icon"><i class="bx bxl-linkedin"></i></a>
+                </div>
+                <p class="mb-0 opacity-75">&copy; 2025 SkyGreen. Todos los derechos reservados. Hecho con 💚 por el futuro de Bolivia.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Floating Action Button -->
+    <div class="fab" onclick="scrollToTop()">
+        <i class="bx bx-up-arrow-alt"></i>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    
+    <script>
+        // Initialize AOS
+        AOS.init({
+            duration: 1000,
+            once: true,
+            offset: 100
+        });
+
+        // Stats Animation
+        function animateStats() {
+            const stats = [
+                { id: "stat1", target: 1240, prefix: "" },
+                { id: "stat2", target: 320, prefix: "" },
+                { id: "stat3", target: 850, prefix: "" }
+            ];
+
+            stats.forEach(stat => {
+                let count = 0;
+                const element = document.getElementById(stat.id);
+                const increment = Math.ceil(stat.target / 100);
+                const interval = setInterval(() => {
+                    count += increment;
+                    if (count >= stat.target) {
+                        count = stat.target;
+                        clearInterval(interval);
+                    }
+                    element.textContent = stat.prefix + count.toLocaleString();
+                }, 30);
+            });
+        }
+
+        // Scroll Progress Bar
+        function updateScrollProgress() {
+            const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+            const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrollPercent = (scrollTop / scrollHeight) * 100;
+            document.getElementById('scrollProgress').style.width = scrollPercent + '%';
+        }
+
+        // Scroll to Top
+        function scrollToTop() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
+
+        // Navbar Background on Scroll
+        function handleNavbarScroll() {
+            const navbar = document.querySelector('.navbar');
+            if (window.scrollY > 50) {
+                navbar.style.background = 'rgba(255, 255, 255, 0.98)';
+                navbar.style.boxShadow = '0 4px 25px rgba(0, 0, 0, 0.15)';
+            } else {
+                navbar.style.background = 'rgba(255, 255, 255, 0.95)';
+                navbar.style.boxShadow = '0 2px 20px rgba(0, 0, 0, 0.1)';
+            }
+        }
+
+        // Smooth Scrolling for Links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Event Listeners
+        window.addEventListener('scroll', () => {
+            updateScrollProgress();
+            handleNavbarScroll();
+        });
+
+        // Initialize on load
+        window.addEventListener('load', () => {
+            setTimeout(animateStats, 500);
+        });
+
+        // Intersection Observer for Stats
+        const statsSection = document.querySelector('.stats-section');
+        const statsObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    animateStats();
+                    statsObserver.unobserve(entry.target);
+                }
+            });
+        });
+
+        if (statsSection) {
+            statsObserver.observe(statsSection);
+        }
+
+        // Add hover effects to cards
+        document.querySelectorAll('.law-card, .info-card, .org-card, .stat-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-5px)';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+            });
+        });
+
+        // Dynamic greeting based on time
+        function updateGreeting() {
+            const hour = new Date().getHours();
+            const heroSubtitle = document.querySelector('.hero-subtitle');
+            let greeting = '';
+            
+            if (hour < 12) {
+                greeting = 'Buenos días. ';
+            } else if (hour < 18) {
+                greeting = 'Buenas tardes. ';
+            } else {
+                greeting = 'Buenas noches. ';
+            }
+            
+            heroSubtitle.textContent = greeting + 'Conoce las leyes ambientales de Bolivia y únete a la conservación';
+        }
+
+        // Initialize dynamic content
+        updateGreeting();
+
+        // Add loading animation
+        document.addEventListener('DOMContentLoaded', function() {
+            document.body.style.opacity = '0';
+            setTimeout(() => {
+                document.body.style.transition = 'opacity 0.5s ease-in-out';
+                document.body.style.opacity = '1';
+            }, 100);
+        });
+
+        // Easter egg - Konami code for tree animation
+        let konamiCode = [];
+        const konamiSequence = [38, 38, 40, 40, 37, 39, 37, 39, 66, 65];
+        
+        document.addEventListener('keydown', function(e) {
+            konamiCode.push(e.keyCode);
+            if (konamiCode.length > konamiSequence.length) {
+                konamiCode.shift();
+            }
+            
+            if (JSON.stringify(konamiCode) === JSON.stringify(konamiSequence)) {
+                // Create falling leaves effect
+                createFallingLeaves();
+                konamiCode = [];
+            }
+        });
+
+        function createFallingLeaves() {
+            for (let i = 0; i < 20; i++) {
+                const leaf = document.createElement('div');
+                leaf.innerHTML = '🍃';
+                leaf.style.position = 'fixed';
+                leaf.style.top = '-50px';
+                leaf.style.left = Math.random() * window.innerWidth + 'px';
+                leaf.style.fontSize = '2rem';
+                leaf.style.zIndex = '9999';
+                leaf.style.pointerEvents = 'none';
+                leaf.style.animation = `fall 3s ease-in forwards`;
+                
+                document.body.appendChild(leaf);
+                
+                setTimeout(() => {
+                    leaf.remove();
+                }, 3000);
+            }
+        }
+
+        // Add CSS for falling animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fall {
+                0% {
+                    transform: translateY(-50px) rotate(0deg);
+                    opacity: 1;
+                }
+                100% {
+                    transform: translateY(100vh) rotate(360deg);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        console.log('🌳 SkyGreen cargado correctamente. ¡Protegemos juntos el futuro verde de Bolivia!');
+    </script>
+</body>
+</html>
