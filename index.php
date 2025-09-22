@@ -1,14 +1,12 @@
 <?php
-
 $conn = new mysqli("localhost", "root","", "reforest", 3306);
 if ($conn->connect_error) {
   die("Error de conexión: " . $conn->connect_error);
 }
 
-
-$sql = "SELECT especie, edad, cuidados, estado, fotoUrl, altura, diametroTronco, ST_AsText(coordenadas) as coordenadas,qrUrl FROM arboles";
+// 'id' que faltaba en la consulta
+$sql = "SELECT id, especie, edad, cuidados, estado, fotoUrl, altura, diametroTronco, ST_AsText(coordenadas) as coordenadas, qrUrl FROM arboles";
 $result = $conn->query($sql);
-
 
 $arboles = [];
 if ($result->num_rows > 0) {
@@ -38,12 +36,12 @@ $conn->close();
   <link rel="stylesheet" href="css/theme.min.css" />
   <script src="https://api.mapbox.com/mapbox-gl-js/v2.4.1/mapbox-gl.js"></script>
   <link href="https://api.mapbox.com/mapbox-gl-js/v2.4.1/mapbox-gl.css" rel="stylesheet" />
-  <!-- Agrega tu clave de acceso de Mapbox -->
+  
   <script>
     mapboxgl.accessToken =
       "pk.eyJ1IjoiYWxlc3NpcyIsImEiOiJjbGcxbHBtbHQwdDU5M2RubDFodjY3a2x0In0.NXe43GdM4PJBj7ow0Dnkpw";
   </script>
-  <!-- Agrega tus estilos CSS personalizados -->
+ 
   <style>
     #skygreen-bot {
       position: fixed;
@@ -322,17 +320,6 @@ $conn->close();
       border-radius: 50%;
     }
   </style>
-  <script>
-    function mostrarModal() {
-      var modal = document.getElementById("modal");
-      modal.style.display = "block";
-    }
-
-    function cerrarModal() {
-      var modal = document.getElementById("modal");
-      modal.style.display = "none";
-    }
-  </script>
 </head>
 
 <body data-bs-spy="scroll" data-bs-target="#navScroll">
@@ -364,12 +351,10 @@ $conn->close();
           <li class="nav-item">
             <a class="nav-link" href="info-legal.html"> Más Información </a>
           </li>
+         
           <li class="nav-item">
-            <a class="nav-link" href="administrador.php"> Panel </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link btn btn-dark shadow rounded-0" style="color: white" href="#!" onclick="mostrarModal()">
-              Login
+            <a class="nav-link btn btn-dark shadow rounded-0" style="color: white" href="administrador.php">
+              Panel
             </a>
           </li>
 
@@ -377,23 +362,6 @@ $conn->close();
       </div>
     </div>
   </nav>
-
-  <div id="modal" class="modal">
-    <div class="modal-contenido">
-      <span class="cerrar" onclick="cerrarModal()">&times;</span>
-      <h2 style="color: black">Login</h2>
-      <div id="error-message" style="color: red; text-align: center; display: none;">Usuario o contraseña incorrectos</div>
-      <form id="login-form" method="POST" action="login.php" onsubmit="return validarFormulario()">
-        <label for="usuario" style="color: black">Usuario:</label>
-        <input type="text" class="form-control" name="usuario" required /><br /><br />
-        <label for="contrasena" style="color: black">Contraseña:</label>
-        <input type="password" class="form-control" name="contrasena" required /><br /><br />
-        <input type="submit" class="btn btn-primary" name="submit" value="Iniciar sesión" />
-      </form>
-    </div>
-  </div>
-
-
   <div class="w-100 overflow-hidden bg-gray-100" id="top">
     <div class="container position-relative">
       <div class="col-12 col-lg-8 mt-0 h-100 position-absolute top-0 end-0 bg-cover" data-aos="fade-left" style="background-image: url(img/pla.jpg)"></div>
@@ -570,22 +538,6 @@ $conn->close();
       </div>
     </div>
   </div>
-  
-  <!-- 
-  <div id="skygreen-bot">
-    
-    <div id="skygreen-header">IA SkyGreen</div>
-    
-    <div id="skygreen-body">
-      
-      <input type="text" id="skygreen-question" placeholder="Pregúntame sobre un árbol...">
-      <button onclick="askSkyGreen()">Preguntar</button>
-      <div id="skygreen-response"></div>
-      <div id="skygreen-image"></div>
-    </div>
-  </div>
-  -->
-
   <div class="container py-vh-4 w-100 overflow-hidden" id="workwithus">
     <div class="row d-flex justify-content-center align-items-center">
       <div class="col-lg-5">
@@ -761,264 +713,234 @@ $conn->close();
   <script src="js/bootstrap.bundle.min.js"></script>
   <script src="js/aos.js"></script>
   <script>
-    mapboxgl.accessToken = 'pk.eyJ1IjoiYWxlc3NpcyIsImEiOiJjbGcxbHBtbHQwdDU5M2RubDFodjY3a2x0In0.NXe43GdM4PJBj7ow0Dnkpw';
+    // ESTE CÓDIGO VA EN EL ARCHIVO index.php - REEMPLAZAR EL JAVASCRIPT DEL MAPA
 
-    const map = new mapboxgl.Map({
-      container: 'map',
-      style: 'mapbox://styles/mapbox/outdoors-v11',
-      center: [-66.158468, -17.374908],
-      zoom: 17,
-      pitch: 50,
-      bearing: -17.6
-    });
+mapboxgl.accessToken = 'pk.eyJ1IjoiYWxlc3NpcyIsImEiOiJjbGcxbHBtbHQwdDU5M2RubDFodjY3a2x0In0.NXe43GdM4PJBj7ow0Dnkpw';
 
-    // 
-    const arboles = <?php echo json_encode($arboles); ?>;
+const map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/outdoors-v11',
+    center: [-66.158468, -17.374908],
+    zoom: 17,
+    pitch: 50,
+    bearing: -17.6
+});
 
+// Obtener los árboles desde PHP
+const arboles = <?php echo json_encode($arboles); ?>;
+
+// Función para obtener parámetros de la URL
+function getURLParameter(name) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(name);
+}
+
+// Variable para almacenar todos los marcadores
+let allMarkers = [];
+
+map.on('load', function() {
+    // Cargar todos los árboles
     arboles.forEach(arbol => {
-      const coordinates = arbol.coordenadas.replace('POINT(', '').replace(')', '').split(' ');
-      const lng = parseFloat(coordinates[0]);
-      const lat = parseFloat(coordinates[1]);
+        const coordinates = arbol.coordenadas.replace('POINT(', '').replace(')', '').split(' ');
+        const lng = parseFloat(coordinates[0]);
+        const lat = parseFloat(coordinates[1]);
 
-      if (isNaN(lng) || isNaN(lat)) {
-        console.error("Coordenadas inválidas:", arbol);
-        return;
-      }
+        if (isNaN(lng) || isNaN(lat)) {
+            console.error("Coordenadas inválidas:", arbol);
+            return;
+        }
 
-      // 
-      const el = document.createElement('div');
-      el.className = 'tree-marker';
-      el.style.backgroundImage = 'url("https://cdn2.iconfinder.com/data/icons/miscellaneous-iii-glyph-style/150/tree-512.png")';
-      el.style.width = '30px';
-      el.style.height = '30px';
-      el.style.backgroundSize = 'cover';
-      el.style.cursor = 'pointer';
+        // Crear el elemento del marcador
+        const el = document.createElement('div');
+        el.className = 'tree-marker';
+        el.style.backgroundImage = 'url("https://cdn2.iconfinder.com/data/icons/miscellaneous-iii-glyph-style/150/tree-512.png")';
+        el.style.width = '30px';
+        el.style.height = '30px';
+        el.style.backgroundSize = 'cover';
+        el.style.cursor = 'pointer';
 
-      // Asignar borde según estado del árbol
-      switch (arbol.estado.toLowerCase()) {
-        case 'peligrosos':
-          el.style.border = '3px solid red';
-          break;
-        case 'protegido':
-          el.style.border = '3px solid yellow';
-          break;
-        case 'nativo':
-          el.style.border = '3px solid green';
-          break;
-        default:
-          el.style.border = '3px solid gray';
-      }
+        // Asignar borde según estado del árbol
+        switch (arbol.estado.toLowerCase()) {
+            case 'peligrosos':
+                el.style.border = '3px solid red';
+                break;
+            case 'protegido':
+                el.style.border = '3px solid yellow';
+                break;
+            case 'nativo':
+                el.style.border = '3px solid green';
+                break;
+            default:
+                el.style.border = '3px solid gray';
+        }
 
-      //  popup 
-      const popupContent = `
-      <style="max-width: 200px; padding: 4px; font-size: 12px;">
-      <button class="close-popup" style="
-          position: absolute;
-          top: 3px;
-          right: 5px;
-          background: #ff4d4f;
-          color: #fff;
-          border: none;
-          font-size: 12px;
-          width: 16px;
-          height: 16px;
-          line-height: 16px;
-          text-align: center;
-          cursor: pointer;
-          border-radius: 50%;
-          transition: background 0.2s;
-      ">&times;</button>
-      
-      <h3 style="font-size: 14px; margin-bottom: 5px;">${arbol.especie}</h3>
+        // Crear contenido del popup
+        const popupContent = `
+        <div style="max-width: 200px; padding: 4px; font-size: 12px; position: relative;">
+            <button class="close-popup" style="
+                position: absolute;
+                top: 3px;
+                right: 5px;
+                background: #ff4d4f;
+                color: #fff;
+                border: none;
+                font-size: 12px;
+                width: 16px;
+                height: 16px;
+                line-height: 16px;
+                text-align: center;
+                cursor: pointer;
+                border-radius: 50%;
+                transition: background 0.2s;
+            ">&times;</button>
+            
+            <h3 style="font-size: 14px; margin-bottom: 5px;">${arbol.especie}</h3>
 
-      <a href="360.html"> <!-- Cambia esto al nombre del HTML al que quieres ir -->
-         <img src="${arbol.fotoUrl}" alt="Foto del árbol" style="
-         width: 80%; 
-         height: 90px; 
-         border-radius: 5px; 
-         margin-bottom: 5px;
-        "/>
-      </a>
-      
-      <p style="margin: 3px 0; font-size: 12px; line-height: 1.2;">
-          <strong>Edad:</strong> ${arbol.edad} años
-      </p>
-      
-      <p style="margin: 3px 0; font-size: 12px; line-height: 1.2;">
-          <strong>Altura:</strong> ${arbol.altura} m
-      </p>
-      
-      <p style="margin: 3px 0; font-size: 12px; line-height: 1.2;">
-          <strong>Diámetro:</strong> ${arbol.diametroTronco} cm
-      </p>
-      
-      <p style="margin: 3px 0; font-size: 12px; line-height: 1.2;">
-          <strong>Cuidados:</strong> ${arbol.cuidados}
-      </p>
-      
-      <p style="margin: 3px 0; font-size: 12px; line-height: 1.2;">
-          <strong>Estado:</strong> ${arbol.estado}
-      </p>
-      
-      <img src="${arbol.qrUrl}" alt="QR" style="
-          width: 60px; 
-          height: 60px; 
-          border-radius: 5px;
-      "/>
-      <br>
-      <button class="abrir-form-adopcion" data-id="${arbol.id}" data-especie="${arbol.especie}" style="
-      margin-top: 6px;
-      padding: 5px 10px;
-      background-color: #16a34a;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 12px;
-    ">Adoptar árbol</button>
-  
-  </div>
-`;
+            <a href="360.html">
+                <img src="${arbol.fotoUrl}" alt="Foto del árbol" style="
+                width: 80%; 
+                height: 90px; 
+                border-radius: 5px; 
+                margin-bottom: 5px;
+                "/>
+            </a>
+            
+            <p style="margin: 3px 0; font-size: 12px; line-height: 1.2;">
+                <strong>Edad:</strong> ${arbol.edad} años
+            </p>
+            
+            <p style="margin: 3px 0; font-size: 12px; line-height: 1.2;">
+                <strong>Altura:</strong> ${arbol.altura} m
+            </p>
+            
+            <p style="margin: 3px 0; font-size: 12px; line-height: 1.2;">
+                <strong>Diámetro:</strong> ${arbol.diametroTronco} cm
+            </p>
+            
+            <p style="margin: 3px 0; font-size: 12px; line-height: 1.2;">
+                <strong>Cuidados:</strong> ${arbol.cuidados}
+            </p>
+            
+            <p style="margin: 3px 0; font-size: 12px; line-height: 1.2;">
+                <strong>Estado:</strong> ${arbol.estado}
+            </p>
+            
+            <img src="${arbol.qrUrl}" alt="QR" style="
+                width: 60px; 
+                height: 60px; 
+                border-radius: 5px;
+            "/>
+            <br>
+            
+        </div>
+        `;
 
+        // Crear el popup
+        const popup = new mapboxgl.Popup({
+            offset: [20, -70],
+            closeButton: false,
+            closeOnClick: true
+        }).setHTML(popupContent);
 
+        // Crear el marcador
+        const marker = new mapboxgl.Marker(el)
+            .setLngLat([lng, lat])
+            .setPopup(popup)
+            .addTo(map);
 
-
-      const popup = new mapboxgl.Popup({
-          offset: [20, -70], 
-          closeButton: false,
-          closeOnClick: true
-        })
-        .setHTML(popupContent);
-
-      
-      const marker = new mapboxgl.Marker(el)
-        .setLngLat([lng, lat])
-        .setPopup(popup)
-        .addTo(map);
-
-     
-      el.addEventListener('click', () => {
-        map.flyTo({
-          center: [lng, lat],
-          zoom: 18,
-          essential: true
+        // Almacenar el marcador con su ID para referencia
+        allMarkers.push({
+            id: arbol.id,
+            marker: marker,
+            popup: popup,
+            coordinates: [lng, lat],
+            arbol: arbol
         });
 
-        setTimeout(() => {
-          popup.addTo(map);
-
-         
-          const popupElement = document.querySelector('.mapboxgl-popup');
-          if (popupElement) {
-            popupElement.style.opacity = '1';
-            popupElement.style.transform = 'translateX(20px) translateY(-10px) scale(1.1)'; // Desplazamiento hacia la derecha y hacia arriba
-            popupElement.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
-          }
-
-        
-          setTimeout(() => {
-            const closeBtn = document.querySelector(".close-popup");
-            if (closeBtn) {
-              closeBtn.addEventListener("click", () => {
-                popup.remove();
-              });
-            }
-          }, 100);
-        }, 300);
-      });
-
-
-
-
-      document.addEventListener('click', function(event) {
-        if (event.target && event.target.classList.contains('abrir-form-adopcion')) {
-          const arbolId = event.target.getAttribute('data-id');
-          document.getElementById('arbolIdInput').value = arbolId;
-          document.getElementById('formAdopcionModal').style.display = 'flex';
-        }
-      });
-
-  
-      document.getElementById('cerrarFormularioBtn').addEventListener('click', function() {
-        document.getElementById('formAdopcionModal').style.display = 'none';
-      });
-
-      
-      window.addEventListener('click', function(event) {
-        const modal = document.getElementById('formAdopcionModal');
-        if (event.target === modal) {
-          modal.style.display = 'none';
-        }
-      });
-
-     
-      document.getElementById('formAdopcion').addEventListener('submit', function(e) {
-        e.preventDefault();
-        alert("¡Gracias por adoptar un árbol! 🌱");
-        document.getElementById('formAdopcionModal').style.display = 'none';
-        this.reset();
-      });
-
-
-
-
+        // Event listener para click en marcador
+        el.addEventListener('click', () => {
+            openTreePopup(arbol.id);
+        });
     });
 
-    /*async function askSkyGreen() {
-      const pregunta = document.getElementById("skygreen-question").value;
-      const especie = corregirNombreEspecie(extractSpecies(pregunta));
+    // **FUNCIONALIDAD QR: Verificar si hay un tree_id en la URL**
+    const treeId = getURLParameter('tree_id');
+    if (treeId) {
+        // Esperar un momento para que el mapa cargue completamente
+        setTimeout(() => {
+            openTreePopup(parseInt(treeId));
+        }, 1000);
+    }
+});
 
-      document.getElementById("skygreen-response").innerHTML = "🔍 Buscando información...";
-      document.getElementById("skygreen-image").innerHTML = "";
+// Función para abrir el popup de un árbol específico
+function openTreePopup(treeId) {
+    const targetMarker = allMarkers.find(item => item.id == treeId);
+    
+    if (targetMarker) {
+        // Volar al árbol específico
+        map.flyTo({
+            center: targetMarker.coordinates,
+            zoom: 18,
+            essential: true
+        });
 
-      try {
-        // ✅ Info de Wikipedia
-        const wikiRes = await fetch(`https://es.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(especie)}`);
-        const wikiData = await wikiRes.json();
+        // Abrir el popup después de que termine la animación
+        setTimeout(() => {
+            targetMarker.popup.addTo(map);
 
-        const resumen = wikiData.extract || "🌱 No se encontró información sobre esa especie.";
-        document.getElementById("skygreen-response").innerHTML = `<p><strong>${especie}:</strong> ${resumen}</p>`;
+            // Configurar el popup visualmente
+            const popupElement = document.querySelector('.mapboxgl-popup');
+            if (popupElement) {
+                popupElement.style.opacity = '1';
+                popupElement.style.transform = 'translateX(20px) translateY(-10px) scale(1.1)';
+                popupElement.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
+            }
 
-        // ✅ Imagen de Wikipedia si existe
-        if (wikiData.thumbnail && wikiData.thumbnail.source) {
-          const imageURL = wikiData.thumbnail.source;
-          document.getElementById("skygreen-image").innerHTML = `
-          <p><strong>Imagen del árbol:</strong></p>
-          <img src="${imageURL}" alt="Imagen de ${especie}" style="width:100%; border-radius: 8px;" />
-        `;
-        } else {
-          document.getElementById("skygreen-image").innerHTML = "<p>❌ No se encontró imagen para esta especie.</p>";
+            // Agregar funcionalidad al botón de cerrar
+            setTimeout(() => {
+                const closeBtn = document.querySelector(".close-popup");
+                if (closeBtn) {
+                    closeBtn.addEventListener("click", () => {
+                        targetMarker.popup.remove();
+                    });
+                }
+
+                // Agregar funcionalidad al botón de adopción
+                const adoptBtn = document.querySelector(".abrir-form-adopcion");
+                if (adoptBtn) {
+                    adoptBtn.addEventListener("click", function() {
+                        // Aquí puedes agregar la lógica para abrir el formulario de adopción
+                        console.log("Adoptar árbol ID:", this.getAttribute('data-id'));
+                        console.log("Especie:", this.getAttribute('data-especie'));
+                    });
+                }
+            }, 100);
+
+        }, 1000); // Esperar a que termine la animación del flyTo
+
+        
+        // Esto remueve el parámetro tree_id de la URL sin recargar la página
+        if (window.history && window.history.replaceState) {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('tree_id');
+            window.history.replaceState({}, document.title, url.pathname + url.hash);
         }
-
-      } catch (error) {
-        document.getElementById("skygreen-response").innerHTML = `<p>❌ Error al buscar información.</p>`;
-        console.error(error);
-      }
+    } else {
+        console.error("Árbol no encontrado con ID:", treeId);
+        // Mostrar mensaje de error al usuario
+        alert("Árbol no encontrado. El código QR podría estar dañado o el árbol ya no existe.");
     }
+}
 
-    function extractSpecies(texto) {
-      let cleaned = texto.toLowerCase();
-      const stopWords = ['qué', 'es', 'el', 'la', 'un', 'una', 'árbol', 'sobre', 'quiero', 'saber', 'del', 'de', 'en', 'bolivia', 'háblame', 'como', 'cómo'];
-      stopWords.forEach(w => cleaned = cleaned.replace(w, ''));
-      return cleaned.trim().replace(/\s+/g, ' ');
-    }
+// Funcionalidad adicional para búsqueda directa por ID (opcional)
+function buscarArbolPorId(id) {
+    openTreePopup(parseInt(id));
+}
 
-    function corregirNombreEspecie(nombre) {
-      const mapa = {
-        "lluvia dorada": "Cassia fistula",
-        "tajibo": "Handroanthus impetiginosus",
-        "algarrobo": "Prosopis alba",
-        "copaibo": "Copaifera langsdorffii",
-        "toborochi": "Ceiba speciosa",
-        "palo santo": "Bursera graveolens"
-      };
-      return mapa[nombre] || nombre;
-    }*/
+   
   </script>
-
-
-
-  <script>
+<script>
     AOS.init({
       duration: 800, // values from 0 to 3000, with step 50ms
     });
@@ -1060,30 +982,8 @@ $conn->close();
         }
       }
     });
-
-    function validarFormularioActual() {
-      const currentSlide = document.getElementById("slide" + currentForm);
-      const requiredFields = currentSlide.querySelectorAll("[required]");
-      let isValid = true;
-
-      requiredFields.forEach((field) => {
-        if (field.value.trim() === "") {
-          isValid = false;
-          field.classList.add("campo-invalido");
-        } else {
-          field.classList.remove("campo-invalido");
-        }
-      });
-
-      if (!isValid) {
-        alert("Por favor, complete todos los campos requeridos.");
-      }
-
-      return isValid;
-    }
+    
   </script>
-  
   <script src="https://unpkg.com/boxicons@2.1.4/dist/boxicons.js"></script>
 </body>
-
 </html>

@@ -1,9 +1,14 @@
 <?php
-// Conexión a la base de datos
+
 $conn = new mysqli("localhost", "root", "", "reforest", 3306);
 
-// Verifica si la biblioteca phpqrcode está disponible
+
 require_once 'phpqrcode/qrlib.php';
+
+// Crear directorio para imágenes si no existe
+if (!file_exists('uploads/trees/')) {
+    mkdir('uploads/trees/', 0777, true);
+}
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Procesar datos del formulario
@@ -11,20 +16,68 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $edad = $_POST['edad'];
     $cuidados = $_POST['cuidados'];
     $estado = $_POST['estado'];
-    $fotoUrl = $_POST['fotoUrl'];
     $altura = $_POST['altura'];
     $diametroTronco = $_POST['diametroTronco'];
     $coordenadas = "POINT(" . $_POST['lng'] . " " . $_POST['lat'] . ")";
+    
+    $fotoUrl = null;
+    
+    // Procesar subida de imagen
+    if (isset($_FILES['foto']) && $_FILES['foto']['error'] == 0) {
+        $allowed = array("jpg" => "image/jpg", "jpeg" => "image/jpeg", "gif" => "image/gif", "png" => "image/png");
+        $filename = $_FILES['foto']['name'];
+        $filetype = $_FILES['foto']['type'];
+        $filesize = $_FILES['foto']['size'];
+        
+        // Verificar extensión del archivo
+        $ext = pathinfo($filename, PATHINFO_EXTENSION);
+        if (!array_key_exists($ext, $allowed)) {
+            die("Error: Por favor selecciona un formato de archivo válido (JPG, JPEG, PNG, GIF).");
+        }
+        
+        // Verificar tamaño del archivo - 5MB máximo
+        $maxsize = 5 * 1024 * 1024;
+        if ($filesize > $maxsize) {
+            die("Error: El archivo es demasiado grande. Tamaño máximo: 5MB.");
+        }
+        
+        // Verificar tipo MIME
+        if (!in_array($filetype, $allowed)) {
+            die("Error: Ha ocurrido un problema al subir el archivo. Por favor intenta de nuevo.");
+        }
+        
+        // Generar nombre único para el archivo
+        $newName = time() . '_' . uniqid() . '.' . $ext;
+        $targetPath = 'uploads/trees/' . $newName;
+        
+        // Mover archivo al directorio de destino
+        if (move_uploaded_file($_FILES['foto']['tmp_name'], $targetPath)) {
+            $fotoUrl = $targetPath;
+        } else {
+            die("Error: Ha ocurrido un problema al subir el archivo.");
+        }
+    } else {
+        die("Error: No se ha seleccionado ningún archivo o ha ocurrido un error en la subida.");
+    }
 
     // Insertar el registro inicial sin QR
-    $sql = "INSERT INTO arboles (especie, edad, cuidados, estado, fotoUrl, altura, diametroTronco, coordenadas, qrUrl) 
-            VALUES ('$especie', $edad, '$cuidados', '$estado', '$fotoUrl', $altura, $diametroTronco, ST_GeomFromText('$coordenadas'), NULL)";
+    $sql = "INSERT INTO arboles (especie, edad, cuidados, estado, fotoUrl, altura, diametroTronco, coordenadas, qrUrl, fecha_registro) 
+            VALUES ('$especie', $edad, '$cuidados', '$estado', '$fotoUrl', $altura, $diametroTronco, ST_GeomFromText('$coordenadas'), NULL, NOW())";
 
     if ($conn->query($sql)) {
         $lastId = $conn->insert_id; // Obtener el último ID insertado
 
-        // Generar la URL única para este árbol
-        $treeUrl = "https://es.wikipedia.org/wiki/Schinus_molle" . $lastId;
+        // MODIFICACIÓN: Crear la URL que incluye el ID del árbol para mostrar el popup específico
+        $domain = $_SERVER['HTTP_HOST'];
+        $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+        $currentDir = dirname($_SERVER['REQUEST_URI']);
+        // Cambiar la URL para que vaya al mapa con el ID del árbol específico
+        $treeUrl = $protocol . "://" . $domain . $currentDir . "/index.php?tree_id=" . $lastId . "#map";
+
+        // Crear directorio para QR codes si no existe
+        if (!file_exists('qr_codes/')) {
+            mkdir('qr_codes/', 0777, true);
+        }
 
         // Generar el código QR y guardarlo en el servidor
         $qrFilename = 'qr_codes/qr_' . $lastId . '.png';
@@ -33,11 +86,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // Actualizar el registro con la URL del QR
         $updateSql = "UPDATE arboles SET qrUrl = '$qrFilename' WHERE id = $lastId";
         $conn->query($updateSql);
+        
+        echo json_encode(['success' => true, 'message' => 'Árbol registrado exitosamente']);
+        exit;
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Error al registrar el árbol']);
+        exit;
     }
 }
 
-// Obtener todos los árboles de la base de datos para mostrarlos en el mapa
-$sql = "SELECT especie, edad, cuidados, estado, fotoUrl, altura, diametroTronco, ST_AsText(coordenadas) as coordenadas, qrUrl FROM arboles";
+
+$sql = "SELECT id, especie, edad, cuidados, estado, fotoUrl, altura, diametroTronco, ST_AsText(coordenadas) as coordenadas, qrUrl FROM arboles";
 $result = $conn->query($sql);
 
 // Array para almacenar los árboles
@@ -228,6 +287,66 @@ $conn->close();
             box-shadow: 0 0 0 2px rgba(45, 80, 22, 0.1);
         }
 
+        /* Estilos para el input de archivo */
+        .file-input-container {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-input-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px dashed #dee2e6;
+            border-radius: 4px;
+            background: #f8f9fa;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-size: 1rem;
+        }
+
+        .file-input-label:hover {
+            border-color: #2d5016;
+            background: #f0f8f0;
+            color: #2d5016;
+        }
+
+        .file-input-label i {
+            margin-right: 0.5rem;
+            font-size: 1.2rem;
+        }
+
+        .file-preview {
+            margin-top: 1rem;
+            text-align: center;
+        }
+
+        .file-preview img {
+            max-width: 200px;
+            max-height: 150px;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .file-info {
+            background: #e8f5e8;
+            border: 1px solid #c3e6cb;
+            border-radius: 4px;
+            padding: 0.5rem;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            color: #155724;
+        }
+
         .btn {
             padding: 0.75rem 1.5rem;
             border: none;
@@ -387,6 +506,24 @@ $conn->close();
             font-size: 0.9rem;
             color: #555;
         }
+
+        .view-tree-btn {
+            background: #2d5016;
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 0.8rem;
+            display: inline-block;
+            margin-top: 0.5rem;
+            transition: background 0.3s ease;
+        }
+
+        .view-tree-btn:hover {
+            background: #1a2f0c;
+            color: white;
+        }
     </style>
 </head>
 
@@ -398,8 +535,7 @@ $conn->close();
                 SkyGreen
             </div>
             <ul class="nav-links">
-                
-                <li><a href="index.php">Volver</a></li>
+                <li><a href="index.php">Volver Al Inicio</a></li>
             </ul>
         </nav>
     </header>
@@ -425,7 +561,7 @@ $conn->close();
                     Registrar Nuevo Árbol
                 </h2>
                 
-                <form id="arbolForm">
+                <form id="arbolForm" enctype="multipart/form-data">
                     <div class="form-group">
                         <label class="form-label">
                             <i class="fas fa-seedling"></i> Especie del Árbol
@@ -462,9 +598,16 @@ $conn->close();
 
                     <div class="form-group">
                         <label class="form-label">
-                            <i class="fas fa-image"></i> URL de la Fotografía
+                            <i class="fas fa-camera"></i> Fotografía del Árbol
                         </label>
-                        <input type="text" name="fotoUrl" class="form-input" placeholder="https://ejemplo.com/foto.jpg" required />
+                        <div class="file-input-container">
+                            <input type="file" id="foto" name="foto" class="file-input" accept="image/*" required>
+                            <label for="foto" class="file-input-label">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                Seleccionar imagen del árbol
+                            </label>
+                        </div>
+                        <div id="filePreview" class="file-preview"></div>
                     </div>
 
                     <div class="form-row">
@@ -498,7 +641,7 @@ $conn->close();
                         </button>
                     </div>
 
-                    <button type="button" id="agregarArbolBtn" class="btn btn-primary" style="width: 100%; margin-top: 1rem;" disabled onclick="obtenerCoordenadas()">
+                    <button type="button" id="agregarArbolBtn" class="btn btn-primary" style="width: 100%; margin-top: 1rem;" disabled onclick="submitForm()">
                         <i class="fas fa-plus"></i>
                         Registrar Árbol
                     </button>
@@ -529,6 +672,55 @@ $conn->close();
         });
 
         let marker, lng, lat;
+
+        // Preview de archivo
+        document.getElementById('foto').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const preview = document.getElementById('filePreview');
+            
+            if (file) {
+                // Validar tipo de archivo
+                const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+                if (!allowedTypes.includes(file.type)) {
+                    showNotification('Por favor selecciona un archivo de imagen válido (JPG, PNG, GIF)', 'error');
+                    e.target.value = '';
+                    preview.innerHTML = '';
+                    return;
+                }
+                
+                // Validar tamaño (5MB máximo)
+                const maxSize = 5 * 1024 * 1024;
+                if (file.size > maxSize) {
+                    showNotification('El archivo es demasiado grande. Tamaño máximo: 5MB', 'error');
+                    e.target.value = '';
+                    preview.innerHTML = '';
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    preview.innerHTML = `
+                        <img src="${event.target.result}" alt="Vista previa">
+                        <div class="file-info">
+                            <i class="fas fa-file-image"></i> ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)
+                        </div>
+                    `;
+                };
+                reader.readAsDataURL(file);
+                
+                // Cambiar texto del label
+                document.querySelector('.file-input-label').innerHTML = `
+                    <i class="fas fa-check-circle"></i>
+                    Imagen seleccionada: ${file.name}
+                `;
+            } else {
+                preview.innerHTML = '';
+                document.querySelector('.file-input-label').innerHTML = `
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    Seleccionar imagen del árbol
+                `;
+            }
+        });
 
         map.on('load', function() {
             map.addLayer({
@@ -595,7 +787,7 @@ $conn->close();
                     <p><i class="fas fa-circle"></i> <strong>Diámetro:</strong> ${arbol.diametroTronco} cm</p>
                     <p><i class="fas fa-heart"></i> <strong>Cuidados:</strong> ${arbol.cuidados}</p>
                     <p><i class="fas fa-shield-alt"></i> <strong>Categoría:</strong> ${arbol.estado}</p>
-                    <img src="${arbol.qrUrl}" alt="QR del árbol" style="width: 100px; height: 100px;" />
+                    <br><img src="${arbol.qrUrl}" alt="QR del árbol" style="width: 100px; height: 100px; margin-top: 0.5rem;" />
                 `);
 
                 marker.setPopup(popup);
@@ -633,37 +825,68 @@ $conn->close();
             }
         }
 
-        function obtenerCoordenadas() {
+        function submitForm() {
             const form = document.getElementById('arbolForm');
             const formData = new FormData(form);
+            
+            // Validar que se haya seleccionado una imagen
+            if (!document.getElementById('foto').files[0]) {
+                showNotification('Por favor selecciona una imagen del árbol', 'error');
+                return;
+            }
+            
+            // Validar coordenadas
+            if (!lng || !lat) {
+                showNotification('Por favor selecciona una ubicación en el mapa', 'error');
+                return;
+            }
+            
             formData.append('lng', lng);
             formData.append('lat', lat);
 
             // Mostrar loading en el botón
             const btn = document.getElementById('agregarArbolBtn');
             const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registrando...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Subiendo imagen y registrando...';
             btn.disabled = true;
 
             fetch('administrador.php', {
                 method: 'POST',
                 body: formData
-            }).then(() => {
-                document.getElementById('successMessage').style.display = 'block';
-                form.reset();
-                marker.remove();
-                marker = null;
-                lng = null;
-                lat = null;
-                btn.innerHTML = originalText;
-                btn.disabled = true;
-                
-                setTimeout(() => {
-                    location.reload();
-                }, 2000);
-            }).catch(error => {
-                console.error(error);
-                showNotification('Error al registrar el árbol', 'error');
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('successMessage').style.display = 'block';
+                    form.reset();
+                    document.getElementById('filePreview').innerHTML = '';
+                    document.querySelector('.file-input-label').innerHTML = `
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        Seleccionar imagen del árbol
+                    `;
+                    if (marker) {
+                        marker.remove();
+                        marker = null;
+                    }
+                    lng = null;
+                    lat = null;
+                    btn.innerHTML = originalText;
+                    btn.disabled = true;
+                    
+                    showNotification('¡Árbol registrado exitosamente!', 'success');
+                    
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                } else {
+                    showNotification(data.message || 'Error al registrar el árbol', 'error');
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Error al registrar el árbol. Por favor intenta de nuevo.', 'error');
                 btn.innerHTML = originalText;
                 btn.disabled = false;
             });
@@ -734,7 +957,7 @@ $conn->close();
             
             setTimeout(() => {
                 notification.remove();
-            }, 3000);
+            }, 4000);
         }
 
         // Añadir animación CSS
@@ -746,6 +969,11 @@ $conn->close();
             }
         `;
         document.head.appendChild(style);
+
+        // Prevenir envío del formulario al presionar Enter
+        document.getElementById('arbolForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+        });
     </script>
 </body>
 
