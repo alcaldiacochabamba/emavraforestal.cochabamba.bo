@@ -1,19 +1,25 @@
 <?php
-$conn = new mysqli("localhost", "root","", "reforest", 3306);
+$conn = new mysqli("localhost", "root", "", "reforest", 3306);
 if ($conn->connect_error) {
-  die("Error de conexión: " . $conn->connect_error);
+    die("Error de conexión: " . $conn->connect_error);
 }
 
-$sql = "SELECT id, especie, edad, cuidados, estado, fotoUrl, altura, diametroTronco, ST_AsText(coordenadas) as coordenadas, qrUrl FROM arboles";
+// Consulta completa con todos los campos y funciones SQL apropiadas
+$sql = "SELECT id, especie, nombre_comun, edad, estado, fotoUrl, altura, diametroTronco, diametro_copa, codigo_arbol, ST_AsText(coordenadas) as coordenadas, latitud, longitud, propiedad, otb, nombre_area_verde, inspector, pdfUrl, qrUrl, DATE_FORMAT(fecha_registro, '%d/%m/%y') as fecha_formato, hora_registro FROM arboles";
+
 $result = $conn->query($sql);
-
 $arboles = [];
+
 if ($result->num_rows > 0) {
-  while ($row = $result->fetch_assoc()) {
-    $arboles[] = $row;
-  }
+    while ($row = $result->fetch_assoc()) {
+        $arboles[] = $row;
+    }
 }
+
 $conn->close();
+
+// Para verificar que funciona correctamente, puedes descomentar la siguiente línea:
+// print_r($arboles);
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -26,6 +32,8 @@ $conn->close();
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <script src="https://api.mapbox.com/mapbox-gl-js/v2.8.1/mapbox-gl.js"></script>
   <link href="https://api.mapbox.com/mapbox-gl-js/v2.8.1/mapbox-gl.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700&display=swap" rel="stylesheet">
+
   <style>
     * {
       margin: 0;
@@ -34,7 +42,7 @@ $conn->close();
     }
 
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: 'Poppins', sans-serif;
       line-height: 1.6;
       color: #333;
       overflow-x: hidden;
@@ -70,6 +78,7 @@ $conn->close();
       font-weight: bold;
       color: #333;
       text-decoration: none;
+      font-family: 'Arciform', 'Poppins', sans-serif;
     }
 
     .logo i {
@@ -83,6 +92,7 @@ $conn->close();
       list-style: none;
       gap: 2rem;
       align-items: center;
+      font-family: 'Poppins', sans-serif;
     }
 
     .nav-links a {
@@ -107,6 +117,7 @@ $conn->close();
       border-radius: 25px;
       font-weight: 500;
       transition: all 0.3s ease;
+      font-family: 'Poppins', sans-serif;
     }
 
     .btn-admin:hover {
@@ -150,9 +161,11 @@ $conn->close();
       margin-bottom: 1.5rem;
       opacity: 0;
       animation: fadeInUp 1s ease 0.2s forwards;
+      font-family: 'Arciform', 'Poppins', sans-serif;
     }
 
     .hero-subtitle {
+      font-family: 'Poppins', sans-serif;
       font-size: 1.3rem;
       margin-bottom: 2rem;
       opacity: 0.9;
@@ -184,6 +197,7 @@ $conn->close();
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
+      font-family: 'Poppins', sans-serif;
     }
 
     .btn-primary {
@@ -231,6 +245,7 @@ $conn->close();
       font-weight: 300;
       color: #333;
       margin-bottom: 1rem;
+      font-family: 'Arciform', 'Poppins', sans-serif;
     }
 
     .section-subtitle {
@@ -238,6 +253,7 @@ $conn->close();
       color: #666;
       max-width: 600px;
       margin: 0 auto;
+      font-family: 'Poppins', sans-serif;
     }
 
     .features-grid {
@@ -288,7 +304,7 @@ $conn->close();
 
     /* Map Section */
     .map-section {
-      padding: 100px 0;
+      padding: 150px;
       background: white;
     }
 
@@ -302,7 +318,7 @@ $conn->close();
 
     #map {
       width: 100%;
-      height: 600px;
+      height: 90hv;
       border-radius: 15px;
     }
 
@@ -705,17 +721,14 @@ $conn->close();
         <div id="map"></div>
         <div class="map-legend">
           <h4><i class="fas fa-info-circle"></i> Categorías</h4>
-          <div class="legend-item">
-            <span class="legend-icon protected"></span>
-            Árboles Peligrosos
-          </div>
+        
           <div class="legend-item">
             <span class="legend-icon native"></span>
             Árboles Nativos
           </div>
           <div class="legend-item">
             <span class="legend-icon dangerous"></span>
-            Árboles Protegidos
+            Árboles Exóticos
           </div>
         </div>
       </div>
@@ -875,10 +888,8 @@ $conn->close();
 
         // Set border color based on tree state
         switch (arbol.estado.toLowerCase()) {
-          case 'peligrosos':
-            el.style.border = '3px solid #ff4757';
-            break;
-          case 'protegido':
+          
+          case 'exótico':
             el.style.border = '3px solid #ffa502';
             break;
           case 'nativo':
@@ -912,10 +923,13 @@ $conn->close();
             <strong>Diámetro:</strong> ${arbol.diametroTronco} cm
           </div>
           
-          <div class="popup-info">
-            <i class="fas fa-heart"></i>
-            <strong>Cuidados:</strong> ${arbol.cuidados}
-          </div>
+        ${arbol.pdfUrl ? `
+  <div class="popup-info pdf-container">
+    <a href="${arbol.pdfUrl}" target="_blank" class="pdf-button">
+      <i class="fas fa-file-pdf"></i> Ver más información
+    </a>
+  </div>
+` : ''}
           
           <div class="popup-info">
             <i class="fas fa-shield-alt"></i>

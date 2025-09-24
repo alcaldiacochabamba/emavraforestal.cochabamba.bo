@@ -1,20 +1,25 @@
 <?php
-$conn = new mysqli("localhost", "root","", "reforest", 3306);
+$conn = new mysqli("localhost", "root", "", "reforest", 3306);
 if ($conn->connect_error) {
-  die("Error de conexión: " . $conn->connect_error);
+    die("Error de conexión: " . $conn->connect_error);
 }
 
-// 'id' que faltaba en la consulta
-$sql = "SELECT id, especie, edad, cuidados, estado, fotoUrl, altura, diametroTronco, ST_AsText(coordenadas) as coordenadas, qrUrl FROM arboles";
+// Consulta completa con todos los campos y funciones SQL apropiadas
+$sql = "SELECT id, especie, nombre_comun, edad, estado, fotoUrl, altura, diametroTronco, diametro_copa, codigo_arbol, ST_AsText(coordenadas) as coordenadas, latitud, longitud, propiedad, otb, nombre_area_verde, inspector, pdfUrl, qrUrl, DATE_FORMAT(fecha_registro, '%d/%m/%y') as fecha_formato, hora_registro FROM arboles";
+
 $result = $conn->query($sql);
-
 $arboles = [];
+
 if ($result->num_rows > 0) {
-  while ($row = $result->fetch_assoc()) {
-    $arboles[] = $row;
-  }
+    while ($row = $result->fetch_assoc()) {
+        $arboles[] = $row;
+    }
 }
+
 $conn->close();
+
+// Para verificar que funciona correctamente, puedes descomentar la siguiente línea:
+// print_r($arboles);
 ?>
 <!DOCTYPE html>
 <html class="h-100" lang="es">
@@ -36,6 +41,8 @@ $conn->close();
   <link rel="stylesheet" href="css/theme.min.css" />
   <script src="https://api.mapbox.com/mapbox-gl-js/v2.4.1/mapbox-gl.js"></script>
   <link href="https://api.mapbox.com/mapbox-gl-js/v2.4.1/mapbox-gl.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700&display=swap" rel="stylesheet">
+
   
   <script>
     mapboxgl.accessToken =
@@ -43,6 +50,30 @@ $conn->close();
   </script>
  
   <style>
+    .pdf-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #ff4e50, #f9d423);
+  color: white;
+  font-weight: bold;
+  border-radius: 12px;
+  text-decoration: none;
+  font-size: 14px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.pdf-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.25);
+}
+
+.pdf-button i {
+  font-size: 18px;
+}
+
     #skygreen-bot {
       position: fixed;
       bottom: 20px;
@@ -532,9 +563,9 @@ $conn->close();
     <div class="position-relative overflow-hidden bg-light" id="map" style="height: 550px; width: 100%;">
       <div class="map-legend">
         <h4>Categorías</h4>
-        <div><span class="legend-icon protected"></span> Árboles Peligrosos</div>
+        
         <div><span class="legend-icon native"></span> Árboles Nativos</div>
-        <div><span class="legend-icon dangerous"></span> Árboles Protegidos</div>
+        <div><span class="legend-icon dangerous"></span> Árboles Exoticos</div>
       </div>
     </div>
   </div>
@@ -761,10 +792,8 @@ map.on('load', function() {
 
         // Asignar borde según estado del árbol
         switch (arbol.estado.toLowerCase()) {
-            case 'peligrosos':
-                el.style.border = '3px solid red';
-                break;
-            case 'protegido':
+            
+            case 'exótico':
                 el.style.border = '3px solid yellow';
                 break;
             case 'nativo':
@@ -822,8 +851,16 @@ map.on('load', function() {
             </p>
             
             <p style="margin: 3px 0; font-size: 12px; line-height: 1.2;">
-                <strong>Estado:</strong> ${arbol.estado}
+                <strong>Tipo:</strong> ${arbol.estado}
             </p>
+            ${arbol.pdfUrl ? `
+  <div class="popup-info pdf-container">
+    <a href="${arbol.pdfUrl}" target="_blank" class="pdf-button">
+      <i class="fas fa-file-pdf"></i> Ver PDF
+    </a>
+  </div>
+` : ''}
+
             
             <img src="${arbol.qrUrl}" alt="QR" style="
                 width: 60px; 
