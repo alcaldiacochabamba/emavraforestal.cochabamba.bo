@@ -22,1033 +22,998 @@ $conn->close();
 // print_r($arboles);
 ?>
 <!DOCTYPE html>
-<html lang="es">
+<html class="h-100" lang="es">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SkyGreen - Transformando Cochabamba</title>
-  <meta name="description" content="Plataforma Web Ambiental en colaboración con la Empresa Municipal de Áreas Verdes de Cochabamba">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-  <script src="https://api.mapbox.com/mapbox-gl-js/v2.8.1/mapbox-gl.js"></script>
-  <link href="https://api.mapbox.com/mapbox-gl-js/v2.8.1/mapbox-gl.css" rel="stylesheet" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,shrink-to-fit=no" />
+  <meta name="description" content="A growing collection of ready to use components for the CSS framework Bootstrap 5" />
+  <link rel="apple-touch-icon" sizes="180x180" href="img/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="img/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="img/favicon-16x16.png" />
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+
+  <link rel="icon" type="image/png" sizes="96x96" href=".t/img/favicon.png" />
+  <meta name="author" content="Holger Koenemann" />
+  <meta name="generator" content="Eleventy v2.0.0" />
+  <meta name="HandheldFriendly" content="true" />
+
+  <link rel="stylesheet" href="css/theme.min.css" />
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.4.1/mapbox-gl.js"></script>
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.4.1/mapbox-gl.css" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700&display=swap" rel="stylesheet">
 
+  
+  <script>
+    mapboxgl.accessToken =
+      "pk.eyJ1IjoiYWxlc3NpcyIsImEiOiJjbGcxbHBtbHQwdDU5M2RubDFodjY3a2x0In0.NXe43GdM4PJBj7ow0Dnkpw";
+  </script>
+ 
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    .pdf-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #ff4e50, #f9d423);
+  color: white;
+  font-weight: bold;
+  border-radius: 12px;
+  text-decoration: none;
+  font-size: 14px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
 
-    body {
-      font-family: 'Poppins', sans-serif;
-      line-height: 1.6;
-      color: #333;
-      overflow-x: hidden;
-    }
+.pdf-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.25);
+}
 
-    /* Header Styles */
-    .header {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      padding: 1rem 0;
-      box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+.pdf-button i {
+  font-size: 18px;
+}
+
+    #skygreen-bot {
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 1000;
-      transition: all 0.3s ease;
+      bottom: 20px;
+      right: 20px;
+      width: 320px;
+      background: rgb(255, 255, 255);
+      border: 2px solidrgb(41, 43, 42);
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      font-family: Arial, sans-serif;
+      z-index: 9999;
     }
 
-    .nav {
-      max-width: 1200px;
-      margin: 0 auto;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0 2rem;
-    }
-
-    .logo {
-      display: flex;
-      align-items: center;
-      font-size: 1.8rem;
+    #skygreen-header {
+      background-color: #333940;
+      color: white;
+      padding: 10px;
       font-weight: bold;
-      color: #333;
-      text-decoration: none;
-      font-family: 'Arciform', 'Poppins', sans-serif;
+      border-top-left-radius: 10px;
+      border-top-right-radius: 10px;
     }
 
-    .logo i {
-      margin-right: 0.5rem;
-      color: #3ebeab;
-      font-size: 2rem;
+    #skygreen-body {
+      padding: 10px;
     }
 
-    .nav-links {
-      display: flex;
-      list-style: none;
-      gap: 2rem;
-      align-items: center;
-      font-family: 'Poppins', sans-serif;
+    #skygreen-question {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 8px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
     }
 
-    .nav-links a {
-      text-decoration: none;
-      color: #666;
-      font-weight: 400;
-      transition: color 0.3s ease;
-      padding: 0.5rem 1rem;
-      border-radius: 20px;
-      transition: all 0.3s ease;
-    }
-
-    .nav-links a:hover {
-      color: #482e83;
-      background: rgba(45, 80, 22, 0.1);
-    }
-
-    .btn-admin {
-      background: #3ebeab;
-      color: white !important;
-      padding: 0.7rem 1.5rem !important;
-      border-radius: 25px;
-      font-weight: 500;
-      transition: all 0.3s ease;
-      font-family: 'Poppins', sans-serif;
-    }
-
-    .btn-admin:hover {
-      background: #1a2f0c;
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(45, 80, 22, 0.3);
-    }
-
-    /* Hero Section */
-    .hero {
-      background: linear-gradient(135deg, #482e83 0%, #685ca8 100%);
+    #skygreen-body button {
+      background-color: #333940;
       color: white;
-      padding: 120px 0 80px;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .hero::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20"><defs><radialGradient id="a" cx="50%" cy="50%"><stop offset="0%" stop-opacity=".1"/><stop offset="100%" stop-opacity=".05"/></radialGradient></defs><circle cx="10" cy="10" r="10" fill="url(%23a)"/><circle cx="50" cy="10" r="10" fill="url(%23a)"/><circle cx="90" cy="10" r="10" fill="url(%23a)"/></svg>') repeat;
-      opacity: 0.1;
-    }
-
-    .hero-content {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 2rem;
-      text-align: center;
-      position: relative;
-      z-index: 2;
-    }
-
-    .hero h1 {
-      font-size: 3.5rem;
-      font-weight: 300;
-      margin-bottom: 1.5rem;
-      opacity: 0;
-      animation: fadeInUp 1s ease 0.2s forwards;
-      font-family: 'Arciform', 'Poppins', sans-serif;
-    }
-
-    .hero-subtitle {
-      font-family: 'Poppins', sans-serif;
-      font-size: 1.3rem;
-      margin-bottom: 2rem;
-      opacity: 0.9;
-      max-width: 800px;
-      margin-left: auto;
-      margin-right: auto;
-      opacity: 0;
-      animation: fadeInUp 1s ease 0.4s forwards;
-    }
-
-    .hero-buttons {
-      display: flex;
-      gap: 1rem;
-      justify-content: center;
-      flex-wrap: wrap;
-      opacity: 0;
-      animation: fadeInUp 1s ease 0.6s forwards;
-    }
-
-    .btn {
-      padding: 1rem 2rem;
+      padding: 8px 12px;
       border: none;
-      border-radius: 30px;
-      font-size: 1rem;
-      font-weight: 500;
+      border-radius: 6px;
       cursor: pointer;
-      transition: all 0.3s ease;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-family: 'Poppins', sans-serif;
     }
 
-    .btn-primary {
-      background: white;
-      color: #482e83;
+    #skygreen-response {
+      margin-top: 10px;
+      font-size: 14px;
     }
 
-    .btn-primary:hover {
-      background: #f8f9fa;
-      transform: translateY(-3px);
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    #skygreen-image iframe {
+      width: 100%;
+      height: 200px;
+      border: none;
+      margin-top: 10px;
     }
 
-    .btn-secondary {
-      background: transparent;
-      color: white;
-      border: 2px solid white;
-    }
-
-    .btn-secondary:hover {
-      background: white;
-      color: #3ebeab;
-      transform: translateY(-3px);
-    }
-
-    /* About Section */
-    .about {
-      padding: 100px 0;
-      background: #f8f9fa;
-    }
-
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 2rem;
-    }
-
-    .section-header {
-      text-align: center;
-      margin-bottom: 4rem;
-    }
-
-    .section-title {
-      font-size: 2.5rem;
+    /* inter-300 - latin */
+    @font-face {
+      font-family: "Inter";
+      font-style: normal;
       font-weight: 300;
-      color: #333;
-      margin-bottom: 1rem;
-      font-family: 'Arciform', 'Poppins', sans-serif;
+      font-display: swap;
+      src: local(""), url("./fonts/inter-v12-latin-300.woff2") format("woff2"),
+        /* Chrome 26+, Opera 23+, Firefox 39+ */
+        url("./fonts/inter-v12-latin-300.woff") format("woff");
+      /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
     }
 
-    .section-subtitle {
-      font-size: 1.1rem;
-      color: #666;
-      max-width: 600px;
-      margin: 0 auto;
-      font-family: 'Poppins', sans-serif;
-    }
-
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 2rem;
-      margin-top: 3rem;
-    }
-
-    .feature-card {
-      background: white;
-      padding: 2rem;
-      border-radius: 15px;
-      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
-      transition: all 0.3s ease;
-      text-align: center;
-    }
-
-    .feature-card:hover {
-      transform: translateY(-10px);
-      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
-    }
-
-    .feature-icon {
-      width: 80px;
-      height: 80px;
-      background: linear-gradient(135deg, #482e83, #685ca8);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 1.5rem;
-      color: white;
-      font-size: 2rem;
-    }
-
-    .feature-title {
-      font-size: 1.3rem;
+    @font-face {
+      font-family: "Inter";
+      font-style: normal;
       font-weight: 500;
-      color: #333;
-      margin-bottom: 1rem;
+      font-display: swap;
+      src: local(""), url("./fonts/inter-v12-latin-500.woff2") format("woff2"),
+        /* Chrome 26+, Opera 23+, Firefox 39+ */
+        url("./fonts/inter-v12-latin-500.woff") format("woff");
+      /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
     }
 
-    .feature-description {
-      color: #666;
-      line-height: 1.8;
+    @font-face {
+      font-family: "Inter";
+      font-style: normal;
+      font-weight: 700;
+      font-display: swap;
+      src: local(""), url("./fonts/inter-v12-latin-700.woff2") format("woff2"),
+        /* Chrome 26+, Opera 23+, Firefox 39+ */
+        url("./fonts/inter-v12-latin-700.woff") format("woff");
+      /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
     }
 
-    /* Map Section */
-    .map-section {
-      padding: 150px;
-      background: white;
-    }
-
-    .map-container {
-      background: white;
-      border-radius: 20px;
-      padding: 2rem;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    /* Estilos generales para el carrusel y los formularios */
+    .carousel-container {
+      width: 550px;
       overflow: hidden;
+      margin: 0 auto;
     }
 
+    .carousel {
+      display: flex;
+      transition: transform 0.5s;
+    }
+
+    .slide {
+      flex: 0 0 100%;
+      width: 500px;
+      padding: 20px;
+
+      background-color: #f9f9f9;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+      display: none;
+    }
+
+    .titulo-pagina {
+      font-size: 80px;
+      font-weight: bold;
+
+      /* Cambia el color según tu preferencia */
+      text-align: left;
+      /* Otros estilos adicionales según tus necesidades */
+    }
+
+    #modal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 1000;
+      /* Ajusta este valor según sea necesario */
+    }
+
+    .modal-contenido {
+      background-color: white;
+      margin: 5% auto;
+      /* Ajusta el margen superior según sea necesario */
+      padding: 20px;
+      border: 1px solid #888;
+      max-width: 100%;
+      /* Ajusta el ancho máximo del modal según sea necesario */
+      border-radius: 30px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+      position: relative;
+      z-index: 1001;
+      /* Asegura que el contenido del modal esté por encima del fondo del modal */
+    }
+
+    .cerrar {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+      z-index: 1002;
+      /* Asegura que el botón de cerrar esté por encima del contenido del modal */
+    }
+
+    .cerrar:hover,
+    .cerrar:focus {
+      color: black;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    /* Estilos personalizados para el mapa */
     #map {
       width: 100%;
-      height: 90hv;
-      border-radius: 15px;
+    }
+
+    .tree-marker {
+      border-radius: 50%;
+
+      background-color: cover;
     }
 
     .map-legend {
       position: absolute;
-      top: 20px;
-      left: 20px;
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      padding: 1.5rem;
-      border-radius: 15px;
-      font-family: 'Segoe UI', sans-serif;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+      top: 10px;
+      left: 10px;
+      background-color: rgba(255, 255, 255, 0.8);
+      /* Fondo semitransparente */
+      padding: 10px;
+      border-radius: 5px;
+      font-family: Arial, sans-serif;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      /* Sombra para resaltar la leyenda */
       z-index: 1000;
-      min-width: 200px;
+      /* Z-index alto para asegurar que esté sobre el mapa */
     }
 
     .map-legend h4 {
-      margin: 0 0 1rem;
-      font-size: 1rem;
-      color: #333;
-      font-weight: 500;
-    }
-
-    .legend-item {
-      display: flex;
-      align-items: center;
-      margin-bottom: 0.8rem;
-      font-size: 0.9rem;
+      margin: 0 0 10px;
+      font-size: 14px;
     }
 
     .legend-icon {
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      margin-right: 10px;
-      border: 2px solid;
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      margin-right: 8px;
+      border-radius: 2px;
     }
 
-    .legend-icon.protected { background: #ff4757; border-color: #ff4757; }
-    .legend-icon.native { background: #2ed573; border-color: #2ed573; }
-    .legend-icon.dangerous { background: #ffa502; border-color: #ffa502; }
-
-    /* Honor Wall */
-    .honor-wall {
-      padding: 100px 0;
-      background: #f8f9fa;
+    .legend-icon.protected {
+      background-color: #ff0000;
+      /* Color rojo para Árboles Protegidos */
     }
 
-    .honor-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 2rem;
-      margin-top: 3rem;
+    .legend-icon.native {
+      background-color: #00ff00;
+      /* Color verde para Árboles Nativos */
     }
 
-    .honor-card {
-      background: white;
-      padding: 2rem;
-      border-radius: 20px;
-      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
-      text-align: center;
-      transition: all 0.3s ease;
+    .legend-icon.dangerous {
+      background-color: #ffcc00;
+      /* Color amarillo para Árboles Peligrosos */
     }
 
-    .honor-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+    .container-mapa {
+      max-width: 1000px;
+      /* Cambia este valor según el ancho que prefieras */
+      margin: 0 auto;
+      /* Centra el contenedor horizontalmente */
+
+      /* Opcional: añade espacio alrededor del mapa */
     }
 
-    .honor-avatar {
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      margin: 0 auto 1.5rem;
-      border: 4px solid #685ca8;
-      object-fit: cover;
-    }
-
-    .honor-name {
-      font-size: 1.2rem;
-      font-weight: 500;
-      color: #333;
-      margin-bottom: 0.5rem;
-    }
-
-    .honor-contribution {
-      color: #3ebeab;
-      font-weight: 500;
-    }
-
-    /* Newsletter */
-    .newsletter {
-      padding: 80px 0;
-      background: linear-gradient(135deg, #3ebeab, #3ebeab);
-      color: white;
-      text-align: center;
-    }
-
-    .newsletter-form {
-      max-width: 500px;
-      margin: 2rem auto 0;
-      display: flex;
-      gap: 1rem;
-      flex-wrap: wrap;
-    }
-
-    .newsletter-input {
-      flex: 1;
-      min-width: 250px;
-      padding: 1rem 1.5rem;
-      border: none;
-      border-radius: 30px;
-      font-size: 1rem;
-      outline: none;
-    }
-
-    .newsletter-btn {
-      padding: 1rem 2rem;
-      background: white;
-      color: #685ca8;
-      border: none;
-      border-radius: 30px;
-      font-size: 1rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      white-space: nowrap;
-    }
-
-    .newsletter-btn:hover {
-      background: #f8f9fa;
-      transform: translateY(-2px);
-    }
-
-    /* Footer */
-    .footer {
-      background: #482e83;
-      color: #ccc;
-      padding: 60px 0 30px;
-    }
-
-    .footer-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 3rem;
-      margin-bottom: 3rem;
-    }
-
-    .footer-section h3 {
-      color: white;
-      margin-bottom: 1.5rem;
-      font-size: 1.2rem;
-    }
-
-    .footer-section p {
-      line-height: 1.8;
-      margin-bottom: 1rem;
-    }
-
-    .footer-bottom {
-      text-align: center;
-      padding-top: 2rem;
-      border-top: 1px solid #3ebeab;
-      font-size: 0.9rem;
-    }
-
-    /* Animations */
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(30px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    /* Tree Marker Styles */
-    .tree-marker {
-      background-image: url('https://cdn2.iconfinder.com/data/icons/miscellaneous-iii-glyph-style/150/tree-512.png');
-      background-size: cover;
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      cursor: pointer;
-      transition: transform 0.2s ease;
-    }
-
-    .tree-marker:hover {
-      transform: scale(1.1);
-    }
-
-    /* Popup Styles */
-    .mapboxgl-popup-content {
-      border-radius: 15px;
-      padding: 1rem;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-      max-width: 280px;
-    }
-
-    .popup-header {
-      display: flex;
-      align-items: center;
-      margin-bottom: 1rem;
-    }
-
-    .popup-header i {
-      margin-right: 0.5rem;
-      color: #2d5016;
-    }
-
-    .popup-header h3 {
-      margin: 0;
-      font-size: 1.1rem;
-      color: #333;
-    }
-
-    .popup-image {
+    #map {
       width: 100%;
-      height: 120px;
-      object-fit: cover;
+      height: 90vh;
+    }
+
+    /* Estilos del popup */
+    .mapboxgl-popup {
+      max-width: 250px;
+      font-family: Arial, sans-serif;
+      opacity: 0;
+      transform: scale(0.8);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    .mapboxgl-popup-content {
       border-radius: 10px;
-      margin-bottom: 1rem;
+      padding: 10px;
+      text-align: center;
+      background-color: rgba(255, 255, 255, 0.9);
+      box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+      position: relative;
     }
 
-    .popup-info {
-      font-size: 0.85rem;
-      line-height: 1.4;
-      margin-bottom: 0.5rem;
+    .mapboxgl-popup-content h3 {
+      margin: 0;
+      font-size: 16px;
+      color: #2a6d2a;
     }
 
-    .popup-info i {
-      width: 16px;
-      color: #666;
-      margin-right: 5px;
+    .mapboxgl-popup-content img {
+      width: 100%;
+      border-radius: 5px;
+      margin: 5px 0;
     }
 
-    .qr-code {
-      width: 80px;
-      height: 80px;
-      margin: 1rem auto 0;
-      display: block;
-      border-radius: 8px;
-    }
-
-    /* Mobile Responsiveness */
-    @media (max-width: 768px) {
-      .nav {
-        padding: 0 1rem;
-        flex-wrap: wrap;
-      }
-
-      .nav-links {
-        display: none;
-      }
-
-      .hero h1 {
-        font-size: 2.5rem;
-      }
-
-      .hero-subtitle {
-        font-size: 1.1rem;
-      }
-
-      .hero-buttons {
-        flex-direction: column;
-        align-items: center;
-      }
-
-      .section-title {
-        font-size: 2rem;
-      }
-
-      .newsletter-form {
-        flex-direction: column;
-      }
-
-      .newsletter-input {
-        min-width: auto;
-      }
-
-      .map-legend {
-        position: relative;
-        margin-bottom: 1rem;
-      }
-    }
-
-    /* Scroll behavior */
-    html {
-      scroll-behavior: smooth;
+    /* Botón de cierre */
+    .close-popup {
+      position: absolute;
+      top: 5px;
+      right: 8px;
+      background: red;
+      color: white;
+      border: none;
+      font-size: 14px;
+      width: 20px;
+      height: 20px;
+      line-height: 20px;
+      text-align: center;
+      cursor: pointer;
+      border-radius: 50%;
     }
   </style>
 </head>
 
-<body>
-  <!-- Header -->
-  <header class="header">
-    <nav class="nav">
-      <a href="#home" class="logo">
-        <i class="fas fa-leaf"></i>
-        SkyGreen
+<body data-bs-spy="scroll" data-bs-target="#navScroll">
+  <nav id="navScroll" class="navbar navbar-expand-lg navbar-light fixed-top" tabindex="0" style="background-color: #f9f9f9e0">
+    <div class="container">
+      <a class="navbar-brand pe-4 fs-4" href="#top">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-layers-half" viewbox="0 0 16 16"></svg>
+
+        <span class="ms-1 fw-bolde">SkyGreen<i class="bx bxs-tree-alt"></i></span>
       </a>
-      <ul class="nav-links">
-        <li><a href="#about">¿Qué hacemos?</a></li>
-        <li><a href="#map">Mapa de Árboles</a></li>
-        <li><a href="#honor">Muro de Honor</a></li>
-        <li><a href="#contact">Contacto</a></li>
-        <li><a href="administrador.php" class="btn-admin">Panel Admin</a></li>
-      </ul>
-    </nav>
-  </header>
 
-  <!-- Hero Section -->
-  <section id="home" class="hero">
-    <div class="hero-content">
-      
-      <h1>Bienvenido a SkyGreen</h1>
-      <p class="hero-subtitle">
-        Transformamos Cochabamba construyendo un futuro más verde y sostenible. 
-        Nuestra plataforma web ambiental conecta la comunidad con la naturaleza 
-        en colaboración con la Empresa Municipal de Áreas Verdes.
-      </p>
-      
-      <div class="hero-buttons">
-        <a href="#about" class="btn btn-primary">
-          <i class="fas fa-leaf"></i>
-          Conoce más
-        </a>
-        <a href="#map" class="btn btn-secondary">
-          <i class="fas fa-map"></i>
-          Ver mapa
-        </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item">
+            <a class="nav-link" href="#aboutus"> ¿Que hacemos? </a>
+          </li>
+          <!--<li class="nav-item">
+              <a class="nav-link" href="#numbers"></a>
+            </li>-->
+          <li class="nav-item">
+            <a class="nav-link" href="#map"> Árboles Registrados </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#workwithus"> Muro de Honor </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="info-legal.html"> Más Información </a>
+          </li>
+         
+          <li class="nav-item">
+            <a class="nav-link btn btn-dark shadow rounded-0" style="color: white" href="administrador.php">
+              Panel
+            </a>
+          </li>
+
+        </ul>
       </div>
     </div>
-  </section>
-
-  
-
-  <!-- About Section -->
-  <section id="about" class="about">
-    <div class="container">
-      <div class="section-header">
-        <h2 class="section-title">¿Qué Hacemos?</h2>
-        <p class="section-subtitle">
-          Conectamos la tecnología con la naturaleza para crear un impacto positivo 
-          en el medio ambiente de Cochabamba
-        </p>
-      </div>
-
-      <div class="features-grid">
-        <div class="feature-card">
-          <div class="feature-icon">
-            <i class="fas fa-map-marked-alt"></i>
-          </div>
-          <h3 class="feature-title">Mapa Interactivo</h3>
-          <p class="feature-description">
-            Descubre cada rincón verde de la Zona Norte, identificando árboles según 
-            su estado: protegidos, nativos y peligrosos con información detallada.
+  </nav>
+  <div class="w-100 overflow-hidden bg-gray-100" id="top">
+    <div class="container position-relative">
+      <div class="col-12 col-lg-8 mt-0 h-100 position-absolute top-0 end-0 bg-cover" data-aos="fade-left" style="background-image: url(img/pla.jpg)"></div>
+      <div class="row">
+        <div class="col-lg-7 py-vh-6 position-relative" data-aos="fade-right">
+          <h1 class="display-1 fw-bold mt-5">
+            Bienvenido a Emavra
+          </h1>
+          <p class="lead">
+            Transformamos Cochabamba. <br>
+            Nuestra misión es construir un futuro más verde y sostenible.
+            Nos complace presentar la Plataforma Web Ambiental, una innovadora iniciativa en la Empresa Municipal de Áreas Verdes. Aquí, la comunidad y la naturaleza se unen.
+            ¡Explora y participa en la transformación verde!
           </p>
-        </div>
-
-        <div class="feature-card">
-          <div class="feature-icon">
-            <i class="fas fa-seedling"></i>
-          </div>
-          <h3 class="feature-title">Registro de Árboles</h3>
-          <p class="feature-description">
-            Registra tu árbol y conviértete en un guardián del verde. 
-            Cada registro contribuye al crecimiento de nuestro ecosistema urbano.
-          </p>
-        </div>
-
-        <div class="feature-card">
-          <div class="feature-icon">
-            <i class="fas fa-users"></i>
-          </div>
-          <h3 class="feature-title">Comunidad Verde</h3>
-          <p class="feature-description">
-            Únete a eventos, talleres y actividades comunitarias. 
-            Aprende sobre jardinería sostenible y participa en la reforestación.
-          </p>
+          <a href="#aboutus" class="btn btn-dark btn-xl shadow me-3 rounded-0 my-5">Conoce mas sobre nosotros</a>
         </div>
       </div>
     </div>
-  </section>
+  </div>
 
-  <!-- Map Section -->
-  <section id="map" class="map-section">
+  <div class="py-vh-4 bg-gray-100 w-100 overflow-hidden" id="aboutus">
     <div class="container">
-      <div class="section-header">
-        <h2 class="section-title">Árboles Registrados</h2>
-        <p class="section-subtitle">
-          Explora la ubicación de cada árbol registrado en nuestra plataforma
-        </p>
+      <div class="row d-flex justify-content-between align-items-center">
+        <div class="col-lg-6">
+          <div class="row gx-5 d-flex">
+            <div class="col-md-11">
+              <div class="shadow ratio ratio-16x9 rounded bg-cover bp-center align-self-end" data-aos="fade-right" style="
+                      background-image: url(img/mace.jpg);
+                      --bs-aspect-ratio: 50%;
+                    "></div>
+            </div>
+            <div class="col-md-5 offset-md-1">
+              <div class="shadow ratio ratio-1x1 rounded bg-cover mt-5 bp-center float-end" data-aos="fade-up" style="background-image: url(img/mace2.jpg)"></div>
+            </div>
+            <div class="col-md-6">
+              <div class="col-12 shadow ratio rounded bg-cover mt-5 bp-center" data-aos="fade-left" style="
+                      background-image: url(img/mac4.webp);
+                      --bs-aspect-ratio: 150%;
+                    "></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <h3 class="py-5 border-top border-dark" data-aos="fade-left">
+            ¿Qué Hacemos?
+          </h3>
+          <p data-aos="fade-left" data-aos-delay="200">
+            Mapa Interactivo: Descubre cada rincón verde de Cochabamba, identificando árboles. Explora un mapa detallado que clasifica los árboles según su tipo.
+            <br>
+            Información Detallada: Aprende sobre las especies de árboles y su historia. Accede a datos específicos como la edad de los árboles y consejos para su mantenimiento.
+            <br>
+            Eventos y Talleres: Únete a nuestras actividades comunitarias, aprende sobre los árboles, sostenibilidad y participa en la siembra de árboles. Promovemos la reforestación y te invitamos seguir las plantaciones en nuestra plataforma web.
+          </p>
+        </div>
       </div>
+    </div>
+  </div>
+  <div class="small py-vh-3 w-100 overflow-hidden">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-6 col-lg-4 border-end" data-aos="fade-up">
+          <div class="d-flex">
+            <div class="col-md-3 flex-fill pt-3 pe-3 pe-md-0">
+              <svg xmlns="http://www.w3.org/2000/svg" width="42" height="42" fill="currentColor" class="bi bi-box-seam" viewbox="0 0 16 16">
+                <path d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5l2.404.961L10.404 2l-2.218-.887zm3.564 1.426L5.596 5 8 5.961 14.154 3.5l-2.404-.961zm3.25 1.7-6.5 2.6v7.922l6.5-2.6V4.24zM7.5 14.762V6.838L1 4.239v7.923l6.5 2.6zM7.443.184a1.5 1.5 0 0 1 1.114 0l7.129 2.852A.5.5 0 0 1 16 3.5v8.662a1 1 0 0 1-.629.928l-7.185 2.874a.5.5 0 0 1-.372 0L.63 13.09a1 1 0 0 1-.63-.928V3.5a.5.5 0 0 1 .314-.464L7.443.184z" />
+              </svg>
+            </div>
+            <div class="col-md-9 flex-fill">
+              <h3 class="h5 my-2">Registro de Árboles:</h3>
+              <p>
+                Registra tu árbol y conviértete en un guardián del verde en tu vecindario.
+              </p>
+              <h3 class="h5 my-2">Guía del arbolado urbano en Cochabamba</h3>
+              <p>
+                <a href="https://www.lostiempos.com/sites/default/files/ayma2021guiadeselecciondeespeciesparaelarboladourbanodecochabambaparacompartir_1_0.pdf" target="_blank">Informate aquí....</a>
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4 border-end" data-aos="fade-up" data-aos-delay="200">
+          <div class="d-flex">
+            <div class="col-md-3 flex-fill pt-3 pt-3 pe-3 pe-md-0">
+              <svg xmlns="http://www.w3.org/2000/svg" width="42" height="42" fill="currentColor" class="bi bi-card-checklist" viewbox="0 0 16 16">
+                <path d="M14.5 3a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h13zm-13-1A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13z" />
+                <path d="M7 5.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm-1.496-.854a.5.5 0 0 1 0 .708l-1.5 1.5a.5.5 0 0 1-.708 0l-.5-.5a.5.5 0 1 1 .708-.708l.146.147 1.146-1.147a.5.5 0 0 1 .708 0zM7 9.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5zm-1.496-.854a.5.5 0 0 1 0 .708l-1.5 1.5a.5.5 0 0 1-.708 0l-.5-.5a.5.5 0 0 1 .708-.708l.146.147 1.146-1.147a.5.5 0 0 1 .708 0z" />
+              </svg>
+            </div>
+            <div class="col-md-9 flex-fill">
+              <h3 class="h5 my-2">Especies de Árboles Legales y Recomendadas para Plantar en Cochabamba</h3>
+              <p>
+                <a href="https://es.wikipedia.org/wiki/Polylepis" target="_blank">Kewiña (Polylepis spp.)</a>
+                <br>
+                <a href="https://es.wikipedia.org/wiki/Alnus_acuminata" target="_blank">Aliso (Alnus acuminata)</a>
+                <br>
+                <a href="https://www.minsal.cl/portal/url/item/7d99ff5a580fdbd7e04001011f016dc3.pdf" target="_blank">Molle (Schinus molle)</a>
+                <br>
+                <a href="https://es.wikipedia.org/wiki/Cinchona_officinalis" target="_blank">Quina (Cinchona officinalis)</a>
+                <br>
+                <a href="https://ciudadesverdes.com/arboles/jacaranda-mimosifolia/" target="_blank">Tarco (Jacaranda mimosifolia)</a>
+                <br>
+                <a href="https://es.wikipedia.org/wiki/Buddleja_coriacea" target="_blank">Kari Kari (Buddleja coriacea)</a>
+                <br>
+                <a href="https://sib.gob.ar/especies/tipuana-tipu" target="_blank">Tipa (Tipuana tipu)</a>
+              </p>
+            </div>
 
-      <div class="map-container">
-        <div id="map"></div>
-        <div class="map-legend">
-          <h4><i class="fas fa-info-circle"></i> Categorías</h4>
+          </div>
+        </div>
+
+        <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="400">
+          <div class="d-flex">
+            <div class="col-md-3 flex-fill pt-3 pt-3 pe-3 pe-md-0">
+              <svg xmlns="http://www.w3.org/2000/svg" width="42" height="42" fill="currentColor" class="bi bi-window-sidebar" viewbox="0 0 16 16">
+                <path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z" />
+                <path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm12 1a1 1 0 0 1 1 1v2H1V3a1 1 0 0 1 1-1h12zM1 13V6h4v8H2a1 1 0 0 1-1-1zm5 1V6h9v7a1 1 0 0 1-1 1H6z" />
+              </svg>
+            </div>
+            <div class="col-md-9 flex-fill">
+              <h3 class="h5 my-2">Seguimiento y Transparencia</h3>
+              <p>
+                Ofrecemos un sistema transparente donde pueden hacer un seguimiento del progreso de las
+                plantaciones, proporcionando actualizaciones periódicas y
+                datos detallados sobre las plantaciones realizadas.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="py-vh-5 w-100 overflow-hidden" id="numbers">
+    <div class="container">
+      <div class="row d-flex justify-content-between align-items-center">
+        <div class="col-lg-5">
+          <h3 class="py-5 border-top border-dark" data-aos="fade-right">
+            Información Educativa
+          </h3>
+        </div>
+        <div class="col-lg-6">
+          <div class="row">
+            <div class="col-12">
+              <h2 class="display-6 mb-5" data-aos="fade-down">
+                Importancia de la Reforestación
+              </h2>
+            </div>
+            <div class="col-lg-6" data-aos="fade-up">
+              <div class="display-1 fw-bold py-4">80%</div>
+              <p class="text-black-50">
+                Los bosques albergan al menos el 80% de la biodiversidad
+                terrestre, proporcionando hogar y refugio para innumerables
+                especies de plantas y animales.
+              </p>
+            </div>
+            <div class="col-lg-6" data-aos="fade-up">
+              <div class="display-1 fw-bold py-4">26,000 millas</div>
+              <p class="text-black-50">
+                Un acre de árboles puede absorber el dióxido de carbono
+                producido por un automóvil que recorre 26,000 millas.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container-mapa">
+    <div class="position-relative overflow-hidden bg-light" id="map" style="height: 550px; width: 100%;">
+      <div class="map-legend">
+        <h4>Categorías</h4>
         
-          <div class="legend-item">
-            <span class="legend-icon native"></span>
-            Árboles Nativos
-          </div>
-          <div class="legend-item">
-            <span class="legend-icon dangerous"></span>
-            Árboles Exóticos
-          </div>
-        </div>
+        <div><span class="legend-icon native"></span> Árboles Nativos</div>
+        <div><span class="legend-icon dangerous"></span> Árboles Exoticos</div>
       </div>
     </div>
-  </section>
-
-  <!-- Honor Wall -->
-  <section id="honor" class="honor-wall">
-    <div class="container">
-      <div class="section-header">
-        <h2 class="section-title">🌳 Muro de Honor</h2>
-        <p class="section-subtitle">
-          Conoce a los héroes que están ayudando a restaurar nuestro ecosistema
+  </div>
+  <div class="container py-vh-4 w-100 overflow-hidden" id="workwithus">
+    <div class="row d-flex justify-content-center align-items-center">
+      <div class="col-lg-5">
+        <h3 class="py-5 border-top border-dark" data-aos="fade-right">
+          🌳 Muro de Honor: Héroes de la Reforestación 🌳
+        </h3>
+        <p>
+          Estos son los héroes que están ayudando a restaurar nuestro ecosistema.
+          ¡Gracias por formar parte de SkyGreen!
         </p>
       </div>
+    </div>
 
-      <div class="honor-grid">
-        <div class="honor-card">
-          <img src="img/person1.jpg" alt="Alejandro Pérez" class="honor-avatar">
-          <h3 class="honor-name">Alejandro Pérez</h3>
-          <p class="honor-contribution">🌿 Ha adoptado un Pino</p>
+    <div class="row">
+      <!-- Tarjeta de Persona 1 -->
+      <div class="col-md-4 mb-4" data-aos="fade-up">
+        <div class="card text-center" style="background-color: #333940; color: #e0e0e0; border-radius: 12px;">
+          <div class="card-body">
+            <img src="img/person1.jpg" class="rounded-circle mb-3" alt="Persona 1" width="80" height="80">
+            <h5 class="card-title">Alejandro Pérez</h5>
+            <p class="card-text">🌿 Ha adoptado un <b>Pino</b></p>
+          </div>
         </div>
+      </div>
 
-        <div class="honor-card">
-          <img src="img/person2.jpg" alt="María Gómez" class="honor-avatar">
-          <h3 class="honor-name">María Gómez</h3>
-          <p class="honor-contribution">🌿 Ha adoptado un Roble</p>
+      <!-- Tarjeta de Persona 2 -->
+      <div class="col-md-4 mb-4" data-aos="fade-up">
+        <div class="card text-center" style="background-color: #333940; color: #e0e0e0; border-radius: 12px;">
+          <div class="card-body">
+            <img src="img/person2.jpg" class="rounded-circle mb-3" alt="Persona 2" width="80" height="80">
+            <h5 class="card-title">María Gómez</h5>
+            <p class="card-text">🌿 Ha adoptado un <b>Roble</b></p>
+          </div>
         </div>
+      </div>
 
-        <div class="honor-card">
-          <img src="img/person3.jpg" alt="Carlos Rodríguez" class="honor-avatar">
-          <h3 class="honor-name">Carlos Rodríguez</h3>
-          <p class="honor-contribution">🌿 Ha adoptado un Ciprés</p>
+      <!-- Tarjeta de Persona 3 -->
+      <div class="col-md-4 mb-4" data-aos="fade-up">
+        <div class="card text-center" style="background-color: #333940; color: #e0e0e0; border-radius: 12px;">
+          <div class="card-body">
+            <img src="img/person3.jpg" class="rounded-circle mb-3" alt="Persona 3" width="80" height="80">
+            <h5 class="card-title">Carlos Rodríguez</h5>
+            <p class="card-text">🌿 Ha adoptado un <b>Ciprés</b></p>
+          </div>
         </div>
+      </div>
 
-        <div class="honor-card">
-          <img src="img/person4.jpg" alt="Laura Méndez" class="honor-avatar">
-          <h3 class="honor-name">Laura Méndez</h3>
-          <p class="honor-contribution">🌿 Ha adoptado un Olivo</p>
+      <!-- Tarjeta de Persona 4 -->
+      <div class="col-md-4 mb-4" data-aos="fade-up">
+        <div class="card text-center" style="background-color: #333940; color: #e0e0e0; border-radius: 12px;">
+          <div class="card-body">
+            <img src="img/person4.jpg" class="rounded-circle mb-3" alt="Persona 4" width="80" height="80">
+            <h5 class="card-title">Laura Méndez</h5>
+            <p class="card-text">🌿 Ha adoptado un <b>Olivo</b></p>
+          </div>
         </div>
+      </div>
 
-        <div class="honor-card">
-          <img src="img/person5.jpg" alt="Fernando Ruiz" class="honor-avatar">
-          <h3 class="honor-name">Fernando Ruiz</h3>
-          <p class="honor-contribution">🌿 Ha adoptado un Almendro</p>
+      <!-- Tarjeta de Persona 5 -->
+      <div class="col-md-4 mb-4" data-aos="fade-up">
+        <div class="card text-center" style="background-color: #333940; color: #e0e0e0; border-radius: 12px;">
+          <div class="card-body">
+            <img src="img/person5.jpg" class="rounded-circle mb-3" alt="Persona 5" width="80" height="80">
+            <h5 class="card-title">Fernando Ruiz</h5>
+            <p class="card-text">🌿 Ha adoptado un <b>Almendro</b></p>
+          </div>
         </div>
+      </div>
 
-        <div class="honor-card">
-          <img src="img/person6.jpg" alt="Ana López" class="honor-avatar">
-          <h3 class="honor-name">Ana López</h3>
-          <p class="honor-contribution">🌿 Ha adoptado un Cerezo</p>
+      <!-- Tarjeta de Persona 6 -->
+      <div class="col-md-4 mb-4" data-aos="fade-up">
+        <div class="card text-center" style="background-color: #333940; color: #e0e0e0; border-radius: 12px;">
+          <div class="card-body">
+            <img src="img/person6.jpg" class="rounded-circle mb-3" alt="Persona 6" width="80" height="80">
+            <h5 class="card-title">Ana López</h5>
+            <p class="card-text">🌿 Ha adoptado un <b>Cerezo</b></p>
+          </div>
         </div>
       </div>
     </div>
-  </section>
+  </div>
+  
+  <div id="formAdopcionModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); z-index: 9999; justify-content: center; align-items: center;">
+    <div style="background: white; padding: 20px; border-radius: 12px; width: 350px; position: relative; display: flex; flex-direction: column;">
+      <button id="cerrarFormularioBtn" style="position: absolute; top: 8px; right: 10px; background: none; border: none; font-size: 20px; cursor: pointer;">&times;</button>
+      <h2 style="margin-bottom: 10px; color: #16a34a;">Formulario de Adopción</h2>
+      <form id="formAdopcion">
+        <input type="hidden" name="arbol_id" id="arbolIdInput">
 
-  <!-- Newsletter -->
-  <section id="contact" class="newsletter">
-    <div class="container">
-      <h2 class="section-title">Mantente Informado</h2>
-      <p class="section-subtitle">
-        Recibe información sobre nuevos árboles, eventos y noticias ambientales
-      </p>
-      <form action="interesados.php" method="post" class="newsletter-form">
-        <input 
-          type="email" 
-          name="email" 
-          class="newsletter-input" 
-          placeholder="tu@email.com" 
-          required
-        >
-        <button type="submit" class="newsletter-btn">
-          <i class="fas fa-paper-plane"></i>
-          Suscribirse
-        </button>
+        <label for="nombre">Nombre completo:</label>
+        <input type="text" id="nombre" name="nombre" required style="width: 100%; padding: 6px; margin-bottom: 8px;">
+
+        <label for="correo">Correo electrónico:</label>
+        <input type="email" id="correo" name="correo" required style="width: 100%; padding: 6px; margin-bottom: 8px;">
+
+        <label for="telefono">Teléfono:</label>
+        <input type="text" id="telefono" name="telefono" style="width: 100%; padding: 6px; margin-bottom: 8px;">
+
+        <label for="mensaje">¿Por qué deseas adoptar este árbol?</label>
+        <textarea id="mensaje" name="mensaje" rows="3" style="width: 100%; padding: 6px; margin-bottom: 10px;"></textarea>
+
+        <button type="submit" style="padding: 8px 12px; background-color: #16a34a; color: white; border: none; border-radius: 6px; cursor: pointer;">Enviar solicitud</button>
       </form>
     </div>
-  </section>
+  </div>
 
-  <!-- Footer -->
-  <footer class="footer">
-    <div class="container">
-      <div class="footer-grid">
-        <div class="footer-section">
-          <h3><i class="fas fa-leaf"></i> SkyGreen</h3>
-          <p>
-            Transformando Cochabamba hacia un futuro más verde y sostenible. 
-            Conectamos la comunidad con la naturaleza través de la tecnología.
-          </p>
-        </div>
-
-        <div class="footer-section">
-          <h3>Contacto</h3>
-          <p><i class="fas fa-envelope"></i> info@skygreen.com</p>
-          <p><i class="fas fa-phone"></i> +591 4 123-4567</p>
-          <p><i class="fas fa-map-marker-alt"></i> Cochabamba, Bolivia</p>
-        </div>
-
-        <div class="footer-section">
-          <h3>Enlaces Útiles</h3>
-          <p><a href="info-legal.html" style="color: #ccc;">Información Legal</a></p>
-          <p><a href="administrador.php" style="color: #ccc;">Panel de Administración</a></p>
-        </div>
-
-        <div class="footer-section">
-          <h3>Síguenos</h3>
-          <p><i class="fab fa-facebook"></i> Facebook</p>
-          <p><i class="fab fa-instagram"></i> Instagram</p>
-          <p><i class="fab fa-whatsapp"></i> WhatsApp</p>
+  <div class="container py-vh-3 border-top" data-aos="fade" data-aos-delay="200" id="testimonials">
+    <div class="row d-flex justify-content-center">
+      <div class="col-12 col-lg-8 text-center">
+        <h3 class="fs-2 fw-light">
+          Ingresa tu<span class="fw-bold"> correo electrónico</span> para
+          proporcionarte más información
+        </h3>
+      </div>
+      <div class="col-12 col-lg-8 text-center">
+        <div class="row">
+          <div class="grouped-inputs border bg-light p-2">
+            <div class="row">
+              <div class="col">
+                <form action="interesados.php" method="post" class="form-floating">
+                  <input type="email" name="email" class="form-control p-3" id="email" placeholder="name@example.com" required />
+                  <div class="col-auto">
+                    <br />
+                    <button type="submit" class="btn btn-dark py-3 px-5">
+                      Enviar
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
+    </div>
+  </div>
+  <footer>
+    <div class="container small border-top">
+      <div class="row py-2 d-flex justify-content-between">
+        <div class="text-secondary mt-3 col-12 col-lg-6 col-xl-3 border-end p-5">
+          <strong class="h6 mb-3">SkyGreen<i class="bx bxs-tree-alt"></i></strong><br />
 
-      <div class="footer-bottom">
-        <p>&copy; 2024 SkyGreen. Todos los derechos reservados.</p>
+          <address class="text-secondary mt-3">
+            "Cambiando la vida del mundo"
+          </address>
+          <ul class="nav flex-column"></ul>
+        </div>
+        <div class="text-secondary mt-3 col-12 col-lg-6 col-xl-3 border-end p-5">
+          <h3 class="h6 mb-3">Facebook</h3>
+          <address class="text-secondary mt-3">Siguenos en facebook:</address>
+          <ul class="nav flex-column"></ul>
+        </div>
+        <div class="text-secondary mt-3 col-12 col-lg-6 col-xl-3 border-end p-5">
+          <h3 class="h6 mb-3">Instagram</h3>
+          <address class="text-secondary mt-3">
+            Siguenos en instagram:
+          </address>
+          <ul class="nav flex-column"></ul>
+        </div>
+        <div class="text-secondary mt-3 col-12 col-lg-6 col-xl-3 p-5">
+          <h3 class="h6 mb-3">Whatsapp</h3>
+          <address class="text-secondary mt-3">Siguenos en WhatsApp:</address>
+          <ul class="nav flex-column"></ul>
+        </div>
       </div>
+    </div>
+
+    <div class="container text-center py-3 small">
+      By
+      <a href="https://github.com/Aless030" class="link-fancy" target="_blank">SkyGreen.com</a>
     </div>
   </footer>
 
+  <script src="js/bootstrap.bundle.min.js"></script>
+  <script src="js/aos.js"></script>
   <script>
-    // Mapbox configuration
-    mapboxgl.accessToken = 'pk.eyJ1IjoiYWxlc3NpcyIsImEiOiJjbGcxbHBtbHQwdDU5M2RubDFodjY3a2x0In0.NXe43GdM4PJBj7ow0Dnkpw';
+    // ESTE CÓDIGO VA EN EL ARCHIVO index.php - REEMPLAZAR EL JAVASCRIPT DEL MAPA
 
-    const map = new mapboxgl.Map({
-      container: 'map',
-      style: 'mapbox://styles/mapbox/outdoors-v11',
-      center: [-66.158468, -17.374908],
-      zoom: 17,
-      pitch: 50,
-      bearing: -17.6
-    });
+mapboxgl.accessToken = 'pk.eyJ1IjoiYWxlc3NpcyIsImEiOiJjbGcxbHBtbHQwdDU5M2RubDFodjY3a2x0In0.NXe43GdM4PJBj7ow0Dnkpw';
 
-    // Get trees data from PHP
-    const arboles = <?php echo json_encode($arboles); ?>;
-    let allMarkers = [];
+const map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/outdoors-v11',
+    center: [-66.158468, -17.374908],
+    zoom: 17,
+    pitch: 50,
+    bearing: -17.6
+});
 
-    // URL parameter function
-    function getURLParameter(name) {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get(name);
-    }
+// Obtener los árboles desde PHP
+const arboles = <?php echo json_encode($arboles); ?>;
 
-    map.on('load', function() {
-      // Load all trees
-      arboles.forEach(arbol => {
+// Función para obtener parámetros de la URL
+function getURLParameter(name) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(name);
+}
+
+// Variable para almacenar todos los marcadores
+let allMarkers = [];
+
+map.on('load', function() {
+    // Cargar todos los árboles
+    arboles.forEach(arbol => {
         const coordinates = arbol.coordenadas.replace('POINT(', '').replace(')', '').split(' ');
         const lng = parseFloat(coordinates[0]);
         const lat = parseFloat(coordinates[1]);
 
         if (isNaN(lng) || isNaN(lat)) {
-          console.error("Invalid coordinates:", arbol);
-          return;
+            console.error("Coordenadas inválidas:", arbol);
+            return;
         }
 
-        // Create marker element
+        // Crear el elemento del marcador
         const el = document.createElement('div');
         el.className = 'tree-marker';
+        el.style.backgroundImage = 'url("https://cdn2.iconfinder.com/data/icons/miscellaneous-iii-glyph-style/150/tree-512.png")';
+        el.style.width = '30px';
+        el.style.height = '30px';
+        el.style.backgroundSize = 'cover';
+        el.style.cursor = 'pointer';
 
-        // Set border color based on tree state
+        // Asignar borde según estado del árbol
         switch (arbol.estado.toLowerCase()) {
-          
-          case 'exótico':
-            el.style.border = '3px solid #ffa502';
-            break;
-          case 'nativo':
-            el.style.border = '3px solid #2ed573';
-            break;
-          default:
-            el.style.border = '3px solid #57606f';
+            
+            case 'exótico':
+                el.style.border = '3px solid yellow';
+                break;
+            case 'nativo':
+                el.style.border = '3px solid green';
+                break;
+            default:
+                el.style.border = '3px solid gray';
         }
 
-        // Create popup content
+        // Crear contenido del popup
         const popupContent = `
-          <div class="popup-header">
-            <i class="fas fa-tree"></i>
-            <h3>${arbol.especie}</h3>
-          </div>
-          
-          <img src="${arbol.fotoUrl}" alt="Foto del árbol" class="popup-image">
-          
-          <div class="popup-info">
-            <i class="fas fa-calendar"></i>
-            <strong>Edad:</strong> ${arbol.edad} años
-          </div>
-          
-          <div class="popup-info">
-            <i class="fas fa-arrows-alt-v"></i>
-            <strong>Altura:</strong> ${arbol.altura} m
-          </div>
-          
-          <div class="popup-info">
-            <i class="fas fa-circle"></i>
-            <strong>Diámetro:</strong> ${arbol.diametroTronco} cm
-          </div>
-          
-        ${arbol.pdfUrl ? `
+        <div style="max-width: 200px; padding: 4px; font-size: 12px; position: relative;">
+            <button class="close-popup" style="
+                position: absolute;
+                top: 3px;
+                right: 5px;
+                background: #ff4d4f;
+                color: #fff;
+                border: none;
+                font-size: 12px;
+                width: 16px;
+                height: 16px;
+                line-height: 16px;
+                text-align: center;
+                cursor: pointer;
+                border-radius: 50%;
+                transition: background 0.2s;
+            ">&times;</button>
+            
+            <h3 style="font-size: 14px; margin-bottom: 5px;">${arbol.especie}</h3>
+
+            <a href="360.html">
+                <img src="${arbol.fotoUrl}" alt="Foto del árbol" style="
+                width: 80%; 
+                height: 90px; 
+                border-radius: 5px; 
+                margin-bottom: 5px;
+                "/>
+            </a>
+            
+            <p style="margin: 3px 0; font-size: 12px; line-height: 1.2;">
+                <strong>Edad:</strong> ${arbol.edad} años
+            </p>
+            
+            <p style="margin: 3px 0; font-size: 12px; line-height: 1.2;">
+                <strong>Altura:</strong> ${arbol.altura} m
+            </p>
+            
+            <p style="margin: 3px 0; font-size: 12px; line-height: 1.2;">
+                <strong>Diámetro:</strong> ${arbol.diametroTronco} cm
+            </p>
+            
+            <p style="margin: 3px 0; font-size: 12px; line-height: 1.2;">
+                <strong>Cuidados:</strong> ${arbol.cuidados}
+            </p>
+            
+            <p style="margin: 3px 0; font-size: 12px; line-height: 1.2;">
+                <strong>Tipo:</strong> ${arbol.estado}
+            </p>
+            ${arbol.pdfUrl ? `
   <div class="popup-info pdf-container">
     <a href="${arbol.pdfUrl}" target="_blank" class="pdf-button">
-      <i class="fas fa-file-pdf"></i> Ver más información
+      <i class="fas fa-file-pdf"></i> Ver PDF
     </a>
   </div>
 ` : ''}
-          
-          <div class="popup-info">
-            <i class="fas fa-shield-alt"></i>
-            <strong>Estado:</strong> ${arbol.estado}
-          </div>
-          
-          <img src="${arbol.qrUrl}" alt="QR del árbol" class="qr-code">
+
+            
+            <img src="${arbol.qrUrl}" alt="QR" style="
+                width: 60px; 
+                height: 60px; 
+                border-radius: 5px;
+            "/>
+            <br>
+            
+        </div>
         `;
 
-        // Create popup
+        // Crear el popup
         const popup = new mapboxgl.Popup({
-          offset: [20, -70],
-          closeButton: true,
-          closeOnClick: true
+            offset: [20, -70],
+            closeButton: false,
+            closeOnClick: true
         }).setHTML(popupContent);
 
-        // Create marker
+        // Crear el marcador
         const marker = new mapboxgl.Marker(el)
-          .setLngLat([lng, lat])
-          .setPopup(popup)
-          .addTo(map);
+            .setLngLat([lng, lat])
+            .setPopup(popup)
+            .addTo(map);
 
-        // Store marker with ID for reference
+        // Almacenar el marcador con su ID para referencia
         allMarkers.push({
-          id: arbol.id,
-          marker: marker,
-          popup: popup,
-          coordinates: [lng, lat],
-          arbol: arbol
+            id: arbol.id,
+            marker: marker,
+            popup: popup,
+            coordinates: [lng, lat],
+            arbol: arbol
         });
-      });
 
-      // Check for tree_id in URL (QR code functionality)
-      const treeId = getURLParameter('tree_id');
-      if (treeId) {
-        setTimeout(() => {
-          openTreePopup(parseInt(treeId));
-        }, 1000);
-      }
+        // Event listener para click en marcador
+        el.addEventListener('click', () => {
+            openTreePopup(arbol.id);
+        });
     });
 
-    // Function to open specific tree popup
-    function openTreePopup(treeId) {
-      const targetMarker = allMarkers.find(item => item.id == treeId);
-      
-      if (targetMarker) {
-        // Fly to specific tree
-        map.flyTo({
-          center: targetMarker.coordinates,
-          zoom: 18,
-          essential: true
-        });
-
-        // Open popup after animation
+    // **FUNCIONALIDAD QR: Verificar si hay un tree_id en la URL**
+    const treeId = getURLParameter('tree_id');
+    if (treeId) {
+        // Esperar un momento para que el mapa cargue completamente
         setTimeout(() => {
-          targetMarker.popup.addTo(map);
+            openTreePopup(parseInt(treeId));
         }, 1000);
-
-        // Clean URL after showing tree
-        if (window.history && window.history.replaceState) {
-          const url = new URL(window.location.href);
-          url.searchParams.delete('tree_id');
-          window.history.replaceState({}, document.title, url.pathname + url.hash);
-        }
-      } else {
-        console.error("Tree not found with ID:", treeId);
-        alert("Árbol no encontrado. El código QR podría estar dañado o el árbol ya no existe.");
-      }
     }
+});
 
-    // Header scroll effect
-    window.addEventListener('scroll', function() {
-      const header = document.querySelector('.header');
-      if (window.scrollY > 100) {
-        header.style.background = 'rgba(255, 255, 255, 0.98)';
-        header.style.boxShadow = '0 2px 30px rgba(0, 0, 0, 0.15)';
-      } else {
-        header.style.background = 'rgba(255, 255, 255, 0.95)';
-        header.style.boxShadow = '0 2px 20px rgba(0, 0, 0, 0.1)';
+// Función para abrir el popup de un árbol específico
+function openTreePopup(treeId) {
+    const targetMarker = allMarkers.find(item => item.id == treeId);
+    
+    if (targetMarker) {
+        // Volar al árbol específico
+        map.flyTo({
+            center: targetMarker.coordinates,
+            zoom: 18,
+            essential: true
+        });
+
+        // Abrir el popup después de que termine la animación
+        setTimeout(() => {
+            targetMarker.popup.addTo(map);
+
+            // Configurar el popup visualmente
+            const popupElement = document.querySelector('.mapboxgl-popup');
+            if (popupElement) {
+                popupElement.style.opacity = '1';
+                popupElement.style.transform = 'translateX(20px) translateY(-10px) scale(1.1)';
+                popupElement.style.transition = 'transform 0.2s ease, opacity 0.2s ease';
+            }
+
+            // Agregar funcionalidad al botón de cerrar
+            setTimeout(() => {
+                const closeBtn = document.querySelector(".close-popup");
+                if (closeBtn) {
+                    closeBtn.addEventListener("click", () => {
+                        targetMarker.popup.remove();
+                    });
+                }
+
+                
+                
+            }, 100);
+
+        }, 1000); // Esperar a que termine la animación del flyTo
+
+        
+        // Esto remueve el parámetro tree_id de la URL sin recargar la página
+        if (window.history && window.history.replaceState) {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('tree_id');
+            window.history.replaceState({}, document.title, url.pathname + url.hash);
+        }
+    } else {
+        console.error("Árbol no encontrado con ID:", treeId);
+        // Mostrar mensaje de error al usuario
+        alert("Árbol no encontrado. El código QR podría estar dañado o el árbol ya no existe.");
+    }
+}
+
+// Funcionalidad adicional para búsqueda directa por ID (opcional)
+function buscarArbolPorId(id) {
+    openTreePopup(parseInt(id));
+}
+
+   
+  </script>
+<script>
+    AOS.init({
+      duration: 800, // values from 0 to 3000, with step 50ms
+    });
+
+    const formCount = 3;
+    let currentForm = 1;
+
+    // EventListeners para el botón "Siguiente" y "Anterior"
+    document.getElementById("next").addEventListener("click", function() {
+      if (validarFormularioActual()) {
+        if (currentForm < formCount) {
+          document.getElementById("slide" + currentForm).style.display =
+            "none";
+          currentForm++;
+          document.getElementById("slide" + currentForm).style.display =
+            "block";
+
+          document.getElementById("prev").style.display = "block";
+          if (currentForm === formCount) {
+            document.getElementById("next").style.display = "none";
+            document.querySelector(
+              'form button[type="submit"]'
+            ).style.display = "block";
+          }
+        }
       }
     });
 
-    // Smooth scrolling for navigation links
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-      anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
-        if (target) {
-          const offsetTop = target.offsetTop - 80;
-          window.scrollTo({
-            top: offsetTop,
-            behavior: 'smooth'
-          });
+    document.getElementById("prev").addEventListener("click", function() {
+      if (currentForm > 1) {
+        document.getElementById("slide" + currentForm).style.display = "none";
+        currentForm--;
+        document.getElementById("slide" + currentForm).style.display =
+          "block";
+
+        document.getElementById("next").style.display = "block";
+        if (currentForm === 1) {
+          document.getElementById("prev").style.display = "none";
         }
-      });
+      }
     });
-
-    // Animation on scroll
-    const observerOptions = {
-      threshold: 0.1,
-      rootMargin: '0px 0px -50px 0px'
-    };
-
-    const observer = new IntersectionObserver(function(entries) {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.style.opacity = '1';
-          entry.target.style.transform = 'translateY(0)';
-        }
-      });
-    }, observerOptions);
-
-    // Observe elements for animation
-    document.querySelectorAll('.feature-card, .honor-card').forEach(el => {
-      el.style.opacity = '0';
-      el.style.transform = 'translateY(30px)';
-      el.style.transition = 'all 0.6s ease';
-      observer.observe(el);
-    });
+    
   </script>
+  <script src="https://unpkg.com/boxicons@2.1.4/dist/boxicons.js"></script>
 </body>
 </html>

@@ -1,6 +1,7 @@
 <?php
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
+date_default_timezone_set('America/La_Paz');
 
 $conn = new mysqli("localhost", "root", "", "reforest", 3306);
 
@@ -333,19 +334,45 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $hora_registro      // s - string
         );
 
+        // REEMPLAZA desde "if ($stmt->execute()) {" hasta "} catch (Exception $e) {" 
+// con este código corregido:
+
         if ($stmt->execute()) {
             $lastId = $conn->insert_id;
             error_log("INSERT EXITOSO. ID generado: " . $lastId);
 
-            // Crear la URL que incluye el ID del árbol
+            // CONSTRUCCIÓN CORREGIDA DE LA URL
             $domain = $_SERVER['HTTP_HOST'];
             $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
-            $currentDir = dirname($_SERVER['REQUEST_URI']);
-            $treeUrl = $protocol . "://" . $domain . $currentDir . "/index.php?tree_id=" . $lastId . "#map";
+            
+            // Obtener el directorio base del proyecto de forma confiable
+            $scriptPath = $_SERVER['SCRIPT_NAME']; // /SkyGreen/administrador.php
+            $basePath = dirname($scriptPath);      // /SkyGreen
+            
+            // Si estamos en el directorio raíz del servidor, basePath será '/'
+            if ($basePath === '/' || $basePath === '\\') {
+                $basePath = '';
+            }
+            
+            // Construir la URL correctamente - ESTA ES LA LÍNEA CLAVE
+            $treeUrl = $protocol . "://" . $domain . $basePath . "/index.php?tree_id=" . $lastId . "#map";
+            
+            // Debug mejorado
+            error_log("=== DEBUG URL GENERATION ===");
+            error_log("HTTP_HOST: " . $domain);
+            error_log("SCRIPT_NAME: " . $_SERVER['SCRIPT_NAME']);
+            error_log("Base Path: " . $basePath);
+            error_log("URL final generada: " . $treeUrl);
+            error_log("============================");
 
             // Generar el código QR
             $qrFilename = 'qr_codes/qr_' . $lastId . '.png';
             try {
+                // Asegurar que el directorio existe
+                if (!file_exists('qr_codes/')) {
+                    mkdir('qr_codes/', 0777, true);
+                }
+                
                 QRcode::png($treeUrl, $qrFilename, QR_ECLEVEL_L, 4);
                 
                 // Actualizar el registro con la URL del QR
@@ -355,7 +382,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     $updateStmt->execute();
                     $updateStmt->close();
                 }
-                error_log("QR generado exitosamente: " . $qrFilename);
+                error_log("QR generado exitosamente: " . $qrFilename . " con URL: " . $treeUrl);
             } catch (Exception $e) {
                 error_log("Error al generar QR: " . $e->getMessage());
             }
@@ -363,10 +390,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             echo json_encode([
                 'success' => true, 
                 'message' => 'Árbol registrado exitosamente',
-                'id' => $lastId
+                'id' => $lastId,
+                'debug_url' => $treeUrl // Para verificar en frontend
             ]);
             $stmt->close();
-            exit;
+            exit; // CORREGIDO: CON PUNTO Y COMA
         } else {
             $error_msg = $stmt->error;
             error_log("Error SQL en insert: " . $error_msg);
@@ -380,6 +408,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         exit;
     }
 }
+
 
 // Consulta para mostrar árboles
 $sql = "SELECT 
@@ -833,6 +862,7 @@ $conn->close();
             border-radius: 4px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
             max-width: 350px;
+            
         }
 
         .mapboxgl-popup-content h3 {
@@ -980,6 +1010,7 @@ $conn->close();
                                 </label>
                                 <input type="text" name="codigo_arbol" class="form-input" placeholder="Ej: P1, P2" required minlength="1"/>
                             </div>
+                                
                         </div>
 
                         <div class="form-group">
@@ -1104,7 +1135,7 @@ $conn->close();
         const map = new mapboxgl.Map({
             container: 'map',
             style: 'mapbox://styles/mapbox/streets-v11',
-            center: [-66.158468, -17.374908],
+            center: [-66.156977, -17.393838],
             zoom: 17,
             pitch: 50,
             bearing: -17.6
@@ -1219,33 +1250,7 @@ $conn->close();
 
         map.on('load', function() {
             // Agregar el área de Unifranz
-            map.addLayer({
-                'id': 'Unifranz',
-                'type': 'fill',
-                'source': {
-                    'type': 'geojson',
-                    'data': {
-                        'type': 'Feature',
-                        'geometry': {
-                            'type': 'Polygon',
-                            'coordinates': [
-                                [
-                                    [-66.157795, -17.374501],
-                                    [-66.159077, -17.374442],
-                                    [-66.159136, -17.375289],
-                                    [-66.157803, -17.375348],
-                                    [-66.157773, -17.374501]
-                                ]
-                            ]
-                        }
-                    }
-                },
-                'layout': {},
-                'paint': {
-                    'fill-color': '#a3dde8',
-                    'fill-opacity': 0.5
-                }
-            });
+            
 
             // Mostrar árboles existentes
             const arboles = <?php echo json_encode($arboles); ?>;
@@ -1276,10 +1281,11 @@ $conn->close();
                     .setHTML(`
                     <div style="max-width: 320px;">
                         <h3><i class="fas fa-tree"></i> ${arbol.especie}</h3>
-                        <p><strong>Nombre común:</strong> ${arbol.nombre_comun}</p>
+                        
                         ${arbol.fotoUrl ? `<img src="${arbol.fotoUrl}" alt="Foto del árbol" style="width: 100%; height: 180px; object-fit: cover;" />` : ''}
                         
                         <div style="margin: 10px 0; padding: 8px; background: #f8f9fa; border-radius: 4px;">
+                            <p><strong>Nombre común:</strong> ${arbol.nombre_comun}</p>
                             <p><i class="fas fa-calendar"></i> <strong>Edad:</strong> ${arbol.edad} años</p>
                             <p><i class="fas fa-arrows-alt-v"></i> <strong>Altura:</strong> ${arbol.altura}m</p>
                             <p><i class="fas fa-circle"></i> <strong>Diámetro Tronco:</strong> ${arbol.diametroTronco}cm</p>
@@ -1530,49 +1536,85 @@ function submitForm() {
     });
 }
         function obtenerUbicacion() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        lng = position.coords.longitude;
-                        lat = position.coords.latitude;
+    if (navigator.geolocation) {
+        
+        // 1. Define las opciones para la geolocalización
+        const options = {
+            enableHighAccuracy: true, // Solicita GPS
+            timeout: 20000,          // Espera hasta 20 segundos
+            maximumAge: 0            // Sin caché
+        };
 
-                        updateCoordinatesDisplay(lng, lat);
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const lng = position.coords.longitude;
+                const lat = position.coords.latitude;
 
-                        if (marker) {
-                            marker.setLngLat([lng, lat]);
-                        } else {
-                            marker = new mapboxgl.Marker({
-                                    draggable: true,
-                                    color: '#2d5016'
-                                })
-                                .setLngLat([lng, lat])
-                                .addTo(map);
+                // Muestra la precisión de la lectura (opcional, pero útil para depurar)
+                console.log('Precisión de la lectura (metros):', position.coords.accuracy);
 
-                            marker.on('dragend', function() {
-                                const lngLat = marker.getLngLat();
-                                lng = lngLat.lng;
-                                lat = lngLat.lat;
-                                updateCoordinatesDisplay(lng, lat);
-                            });
-                        }
+                // Reemplaza las variables globales con las constantes/variables locales
+                // Si tus variables (lng, lat, marker) son globales, asegúrate de mantenerlas.
+                // Usando las variables globales originales:
+                window.lng = lng;
+                window.lat = lat;
 
-                        map.flyTo({
-                            center: [lng, lat],
-                            zoom: 17
-                        });
+                updateCoordinatesDisplay(lng, lat);
 
-                        document.getElementById('agregarArbolBtn').disabled = false;
-                        showNotification('Ubicación obtenida correctamente', 'success');
-                    },
-                    (error) => {
-                        showNotification('Error al obtener la ubicación. Verifica los permisos.', 'error');
-                        console.error(error);
-                    }
-                );
-            } else {
-                showNotification('La geolocalización no es compatible con este navegador.', 'error');
-            }
-        }
+                if (marker) {
+                    marker.setLngLat([lng, lat]);
+                } else {
+                    marker = new mapboxgl.Marker({
+                        draggable: true,
+                        color: '#2d5016'
+                    })
+                    .setLngLat([lng, lat])
+                    .addTo(map);
+
+                    marker.on('dragend', function() {
+                        const lngLat = marker.getLngLat();
+                        window.lng = lngLat.lng;
+                        window.lat = lngLat.lat;
+                        updateCoordinatesDisplay(window.lng, window.lat);
+                    });
+                }
+
+                map.flyTo({
+                    center: [lng, lat],
+                    zoom: 17
+                });
+
+                document.getElementById('agregarArbolBtn').disabled = false;
+                showNotification('Ubicación obtenida correctamente (Precisión: ' + position.coords.accuracy.toFixed(2) + 'm)', 'success');
+            },
+            (error) => {
+                // Función de error con manejo mejorado
+                let message = 'Error al obtener la ubicación. ';
+                switch(error.code) {
+                    case error.PERMISSION_DENIED:
+                        message += "Debes permitir el acceso a tu ubicación.";
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        message += "La información de ubicación no está disponible.";
+                        break;
+                    case error.TIMEOUT:
+                        message += "Se agotó el tiempo de espera para obtener la ubicación de alta precisión.";
+                        break;
+                    case error.UNKNOWN_ERROR:
+                        message += "Ocurrió un error desconocido.";
+                        break;
+                }
+                showNotification(message, 'error');
+                console.error(error);
+            },
+            // 2. Pasamos el objeto de opciones
+            options 
+        );
+    } else {
+        showNotification('La geolocalización no es compatible con este navegador.', 'error');
+    }
+}
+        
 
         function showNotification(message, type) {
             const notification = document.createElement('div');
@@ -1599,11 +1641,6 @@ function submitForm() {
                 notification.remove();
             }, 4000);
         }
-
-        // Prevenir envío del formulario al presionar Enter
-        document.getElementById('arbolForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-        });
     </script>
 </body>
 </html>
