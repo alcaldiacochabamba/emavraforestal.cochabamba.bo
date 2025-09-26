@@ -1,313 +1,313 @@
 <?php
+/**
+ * SISTEMA DE GESTIÓN DE ÁRBOLES - ADMINISTRADOR
+ * Versión optimizada para Docker/Hosting
+ * Fecha: 2024
+ */
+
+// ===============================================
+// CONFIGURACIÓN INICIAL Y HEADERS
+// ===============================================
+
+// Configurar headers para JSON desde el inicio si es POST
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    header('Content-Type: application/json; charset=utf-8');
+}
+
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-// CONFIGURAR ZONA HORARIA LOCAL DE BOLIVIA
+// Configurar zona horaria de Bolivia
 date_default_timezone_set('America/La_Paz');
+
+// ===============================================
+// CONEXIÓN A BASE DE DATOS
+// ===============================================
 
 $conn = new mysqli("host.docker.internal", "root", "", "reforest", 3306);
 
-// Verificar conexión
 if ($conn->connect_error) {
+    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+        echo json_encode(['success' => false, 'message' => 'Error de conexión: ' . $conn->connect_error]);
+        exit;
+    }
     die("Error de conexión: " . $conn->connect_error);
 }
 
 // Configurar MySQL para usar la zona horaria de Bolivia
 $conn->query("SET time_zone = '-04:00'");
 
+// ===============================================
+// LIBRERÍAS Y DIRECTORIOS
+// ===============================================
+
 require_once 'phpqrcode/qrlib.php';
 
-// Crear directorios para archivos si no existen
-if (!file_exists('uploads/trees/')) {
-    mkdir('uploads/trees/', 0777, true);
+// Crear directorios necesarios
+$directories = ['uploads/trees/', 'uploads/pdfs/', 'qr_codes/'];
+foreach ($directories as $dir) {
+    if (!file_exists($dir)) {
+        mkdir($dir, 0777, true);
+    }
 }
 
-if (!file_exists('uploads/pdfs/')) {
-    mkdir('uploads/pdfs/', 0777, true);
+// ===============================================
+// FUNCIONES AUXILIARES
+// ===============================================
+
+/**
+ * Obtener la URL base del proyecto
+ */
+function getBaseUrl() {
+    $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'];
+    $path = dirname($_SERVER['SCRIPT_NAME']);
+    
+    // Normalizar el path
+    if ($path === '/' || $path === '\\') {
+        $path = '';
+    }
+    
+    return $protocol . "://" . $host . $path;
 }
 
-if (!file_exists('qr_codes/')) {
-    mkdir('qr_codes/', 0777, true);
+/**
+ * Validar y procesar archivo de imagen
+ */
+function processImageFile($file) {
+    $allowed = array("jpg" => "image/jpg", "jpeg" => "image/jpeg", "gif" => "image/gif", "png" => "image/png");
+    $filename = $file['name'];
+    $filetype = $file['type'];
+    $filesize = $file['size'];
+    
+    // Verificar extensión
+    $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+    if (!array_key_exists($ext, $allowed)) {
+        return ['success' => false, 'message' => 'Formato de imagen no válido (JPG, JPEG, PNG, GIF)'];
+    }
+    
+    // Verificar tamaño (5MB máximo)
+    if ($filesize > 5 * 1024 * 1024) {
+        return ['success' => false, 'message' => 'La imagen es demasiado grande. Máximo: 5MB'];
+    }
+    
+    // Verificar tipo MIME
+    if (!in_array($filetype, $allowed)) {
+        return ['success' => false, 'message' => 'Problema al verificar el tipo de imagen'];
+    }
+    
+    // Generar nombre único y mover archivo
+    $newName = 'img_' . time() . '_' . uniqid() . '.' . $ext;
+    $targetPath = 'uploads/trees/' . $newName;
+    
+    if (move_uploaded_file($file['tmp_name'], $targetPath)) {
+        return ['success' => true, 'path' => $targetPath];
+    } else {
+        return ['success' => false, 'message' => 'Error al guardar la imagen'];
+    }
 }
+
+/**
+ * Validar y procesar archivo PDF
+ */
+function processPdfFile($file) {
+    $filename = $file['name'];
+    $filetype = $file['type'];
+    $filesize = $file['size'];
+    
+    // Verificar que sea PDF
+    $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+    if ($ext !== 'pdf' || $filetype !== 'application/pdf') {
+        return ['success' => false, 'message' => 'Selecciona un archivo PDF válido'];
+    }
+    
+    // Verificar tamaño (10MB máximo)
+    if ($filesize > 10 * 1024 * 1024) {
+        return ['success' => false, 'message' => 'El PDF es demasiado grande. Máximo: 10MB'];
+    }
+    
+    // Generar nombre único y mover archivo
+    $newName = 'pdf_' . time() . '_' . uniqid() . '.pdf';
+    $targetPath = 'uploads/pdfs/' . $newName;
+    
+    if (move_uploaded_file($file['tmp_name'], $targetPath)) {
+        return ['success' => true, 'path' => $targetPath];
+    } else {
+        return ['success' => false, 'message' => 'Error al guardar el PDF'];
+    }
+}
+
+/**
+ * Generar código QR
+ */
+function generateQR($treeId, $url) {
+    $qrFilename = 'qr_codes/qr_' . $treeId . '.png';
+    
+    try {
+        // Eliminar QR anterior si existe
+        if (file_exists($qrFilename)) {
+            unlink($qrFilename);
+        }
+        
+        // Generar nuevo QR
+        QRcode::png($url, $qrFilename, QR_ECLEVEL_L, 4);
+        
+        if (!file_exists($qrFilename)) {
+            throw new Exception("No se pudo generar el código QR");
+        }
+        
+        return ['success' => true, 'filename' => $qrFilename];
+    } catch (Exception $e) {
+        error_log("Error al generar QR: " . $e->getMessage());
+        return ['success' => false, 'message' => $e->getMessage()];
+    }
+}
+
+// ===============================================
+// PROCESAMIENTO DEL FORMULARIO (POST)
+// ===============================================
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // DEBUG COMPLETO DE LO QUE LLEGA
-    error_log("=== DEBUG POST COMPLETO ===");
-    error_log("POST array completo: " . print_r($_POST, true));
-    error_log("FILES array completo: " . print_r($_FILES, true));
-    
-    // DEBUG ZONA HORARIA
-    error_log("Zona horaria configurada: " . date_default_timezone_get());
-    error_log("Fecha/Hora actual (Bolivia): " . date('Y-m-d H:i:s'));
-    
-    // Procesar cada campo individualmente con debug
-    $especie = '';
-    $nombre_comun = '';
-    $codigo_arbol = '';
-    
-    if (isset($_POST['especie'])) {
-        $especie = trim($_POST['especie']);
-        error_log("Campo especie encontrado: '" . $especie . "' (longitud: " . strlen($especie) . ")");
-    } else {
-        error_log("Campo especie NO ENCONTRADO en $_POST");
-    }
-    
-    if (isset($_POST['nombre_comun'])) {
-        $nombre_comun = trim($_POST['nombre_comun']);
-        error_log("Campo nombre_comun encontrado: '" . $nombre_comun . "' (longitud: " . strlen($nombre_comun) . ")");
-    } else {
-        error_log("Campo nombre_comun NO ENCONTRADO en $_POST");
-    }
-    
-    if (isset($_POST['codigo_arbol'])) {
-        $codigo_arbol = trim($_POST['codigo_arbol']);
-        error_log("Campo codigo_arbol encontrado: '" . $codigo_arbol . "' (longitud: " . strlen($codigo_arbol) . ")");
-    } else {
-        error_log("Campo codigo_arbol NO ENCONTRADO en $_POST");
-    }
-    
-    // Resto de campos con procesamiento normal
-    $edad = isset($_POST['edad']) && is_numeric($_POST['edad']) ? intval($_POST['edad']) : 0;
-    $estado = isset($_POST['estado']) ? trim($_POST['estado']) : '';
-    $altura = isset($_POST['altura']) && is_numeric($_POST['altura']) ? floatval($_POST['altura']) : 0;
-    $diametroTronco = isset($_POST['diametroTronco']) && is_numeric($_POST['diametroTronco']) ? floatval($_POST['diametroTronco']) : 0;
-    $diametro_copa = isset($_POST['diametro_copa']) && is_numeric($_POST['diametro_copa']) ? floatval($_POST['diametro_copa']) : 0;
-    $latitud = isset($_POST['lat']) && is_numeric($_POST['lat']) ? floatval($_POST['lat']) : 0;
-    $longitud = isset($_POST['lng']) && is_numeric($_POST['lng']) ? floatval($_POST['lng']) : 0;
-    $propiedad = isset($_POST['propiedad']) ? trim($_POST['propiedad']) : '';
-    $otb = isset($_POST['otb']) ? trim($_POST['otb']) : '';
-    $nombre_area_verde = isset($_POST['nombre_area_verde']) ? trim($_POST['nombre_area_verde']) : '';
-    $inspector = isset($_POST['inspector']) ? trim($_POST['inspector']) : '';
-    
-    // VALIDACIONES CON DEBUG ESPECÍFICO
-    if (empty($especie)) {
-        error_log("VALIDACIÓN FALLIDA: especie vacía. Valor: '" . $especie . "'");
-        echo json_encode(['success' => false, 'message' => 'El campo "Especie del Árbol" es obligatorio']);
-        exit;
-    }
-    
-    if (empty($nombre_comun)) {
-        error_log("VALIDACIÓN FALLIDA: nombre_comun vacío. Valor: '" . $nombre_comun . "'");
-        echo json_encode(['success' => false, 'message' => 'El campo "Nombre Común" es obligatorio']);
-        exit;
-    }
-    
-    if (empty($codigo_arbol)) {
-        error_log("VALIDACIÓN FALLIDA: codigo_arbol vacío. Valor: '" . $codigo_arbol . "'");
-        echo json_encode(['success' => false, 'message' => 'El código del árbol es obligatorio']);
-        exit;
-    }
-    
-    if ($edad <= 0) {
-        error_log("VALIDACIÓN FALLIDA: edad inválida. Valor: " . $edad);
-        echo json_encode(['success' => false, 'message' => 'La edad debe ser un número mayor a 0']);
-        exit;
-    }
-    
-    if (empty($estado)) {
-        error_log("VALIDACIÓN FALLIDA: estado vacío. Valor: '" . $estado . "'");
-        echo json_encode(['success' => false, 'message' => 'Debe seleccionar un estado/categoría']);
-        exit;
-    }
-    
-    if ($altura <= 0) {
-        error_log("VALIDACIÓN FALLIDA: altura inválida. Valor: " . $altura);
-        echo json_encode(['success' => false, 'message' => 'La altura debe ser un número mayor a 0']);
-        exit;
-    }
-    
-    if ($diametroTronco <= 0) {
-        error_log("VALIDACIÓN FALLIDA: diametroTronco inválido. Valor: " . $diametroTronco);
-        echo json_encode(['success' => false, 'message' => 'El diámetro del tronco debe ser un número mayor a 0']);
-        exit;
-    }
-    
-    if ($diametro_copa <= 0) {
-        error_log("VALIDACIÓN FALLIDA: diametro_copa inválido. Valor: " . $diametro_copa);
-        echo json_encode(['success' => false, 'message' => 'El diámetro de la copa debe ser un número mayor a 0']);
-        exit;
-    }
-    
-    if ($latitud == 0 || $longitud == 0) {
-        error_log("VALIDACIÓN FALLIDA: coordenadas inválidas. Lat: " . $latitud . ", Lng: " . $longitud);
-        echo json_encode(['success' => false, 'message' => 'Debe seleccionar una ubicación válida en el mapa']);
-        exit;
-    }
-    
-    if (empty($propiedad)) {
-        error_log("VALIDACIÓN FALLIDA: propiedad vacía. Valor: '" . $propiedad . "'");
-        echo json_encode(['success' => false, 'message' => 'El campo "Propiedad" es obligatorio']);
-        exit;
-    }
-    
-    if (empty($otb)) {
-        error_log("VALIDACIÓN FALLIDA: otb vacío. Valor: '" . $otb . "'");
-        echo json_encode(['success' => false, 'message' => 'El campo "OTB" es obligatorio']);
-        exit;
-    }
-    
-    if (empty($nombre_area_verde)) {
-        error_log("VALIDACIÓN FALLIDA: nombre_area_verde vacío. Valor: '" . $nombre_area_verde . "'");
-        echo json_encode(['success' => false, 'message' => 'El campo "Nombre del Área Verde" es obligatorio']);
-        exit;
-    }
-    
-    if (empty($inspector)) {
-        error_log("VALIDACIÓN FALLIDA: inspector vacío. Valor: '" . $inspector . "'");
-        echo json_encode(['success' => false, 'message' => 'El campo "Inspector" es obligatorio']);
-        exit;
-    }
-
-    // Validar formato del código (solo letras, números, guiones)
-    if (!preg_match('/^[A-Za-z0-9\-_]+$/', $codigo_arbol)) {
-        error_log("VALIDACIÓN FALLIDA: formato código inválido. Valor: '" . $codigo_arbol . "'");
-        echo json_encode(['success' => false, 'message' => 'El código del árbol solo puede contener letras, números, guiones (-) y guiones bajos (_)']);
-        exit;
-    }
-    
-    // Verificar que el código del árbol no existe ya en la base de datos
-    $checkStmt = $conn->prepare("SELECT id FROM arboles WHERE codigo_arbol = ?");
-    if (!$checkStmt) {
-        error_log("ERROR: No se pudo preparar statement de verificación: " . $conn->error);
-        echo json_encode(['success' => false, 'message' => 'Error al verificar código: ' . $conn->error]);
-        exit;
-    }
-
-    $checkStmt->bind_param("s", $codigo_arbol);
-    $checkStmt->execute();
-    $checkResult = $checkStmt->get_result();
-
-    if ($checkResult->num_rows > 0) {
-        error_log("VALIDACIÓN FALLIDA: código duplicado. Valor: '" . $codigo_arbol . "'");
-        echo json_encode(['success' => false, 'message' => 'Ya existe un árbol con el código: ' . $codigo_arbol]);
-        $checkStmt->close();
-        exit;
-    }
-    $checkStmt->close();
-
-    // Si llegamos hasta aquí, todas las validaciones pasaron
-    error_log("=== TODAS LAS VALIDACIONES PASARON ===");
-    error_log("Procediendo con el procesamiento de archivos...");
-
-    // OBTENER FECHA Y HORA LOCAL DE BOLIVIA
-    $fecha_registro = date('Y-m-d');
-    $hora_registro = date('H:i:s');
-    
-    // DEBUG: Mostrar fecha y hora que se va a guardar
-    error_log("Fecha de registro (Bolivia): " . $fecha_registro);
-    error_log("Hora de registro (Bolivia): " . $hora_registro);
-    error_log("Timestamp completo: " . date('Y-m-d H:i:s'));
-    
-    $fotoUrl = null;
-    $pdfUrl = null;
-    
-    // Procesar subida de imagen
-    if (isset($_FILES['foto']) && $_FILES['foto']['error'] == 0) {
-        error_log("Procesando imagen...");
-        $allowed = array("jpg" => "image/jpg", "jpeg" => "image/jpeg", "gif" => "image/gif", "png" => "image/png");
-        $filename = $_FILES['foto']['name'];
-        $filetype = $_FILES['foto']['type'];
-        $filesize = $_FILES['foto']['size'];
-        
-        // Verificar extensión del archivo
-        $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-        if (!array_key_exists($ext, $allowed)) {
-            echo json_encode(['success' => false, 'message' => 'Por favor selecciona un formato de imagen válido (JPG, JPEG, PNG, GIF)']);
-            exit;
-        }
-        
-        // Verificar tamaño del archivo - 5MB máximo
-        $maxsize = 5 * 1024 * 1024;
-        if ($filesize > $maxsize) {
-            echo json_encode(['success' => false, 'message' => 'La imagen es demasiado grande. Tamaño máximo: 5MB']);
-            exit;
-        }
-        
-        // Verificar tipo MIME
-        if (!in_array($filetype, $allowed)) {
-            echo json_encode(['success' => false, 'message' => 'Ha ocurrido un problema al subir la imagen']);
-            exit;
-        }
-        
-        // Generar nombre único para el archivo
-        $newName = 'img_' . time() . '_' . uniqid() . '.' . $ext;
-        $targetPath = 'uploads/trees/' . $newName;
-        
-        // Mover archivo al directorio de destino
-        if (move_uploaded_file($_FILES['foto']['tmp_name'], $targetPath)) {
-            $fotoUrl = $targetPath;
-            error_log("Imagen guardada exitosamente: " . $fotoUrl);
-        } else {
-            echo json_encode(['success' => false, 'message' => 'Ha ocurrido un problema al subir la imagen']);
-            exit;
-        }
-    } else {
-        error_log("Error en archivo de imagen: " . print_r($_FILES['foto'], true));
-        echo json_encode(['success' => false, 'message' => 'No se ha seleccionado ninguna imagen o ha ocurrido un error en la subida']);
-        exit;
-    }
-
-    // Procesar subida de PDF (opcional)
-    if (isset($_FILES['pdf']) && $_FILES['pdf']['error'] == 0) {
-        error_log("Procesando PDF...");
-        $pdfFilename = $_FILES['pdf']['name'];
-        $pdfFiletype = $_FILES['pdf']['type'];
-        $pdfFilesize = $_FILES['pdf']['size'];
-        
-        // Verificar que sea un PDF
-        $pdfExt = strtolower(pathinfo($pdfFilename, PATHINFO_EXTENSION));
-        if ($pdfExt !== 'pdf' || $pdfFiletype !== 'application/pdf') {
-            echo json_encode(['success' => false, 'message' => 'Por favor selecciona un archivo PDF válido']);
-            exit;
-        }
-        
-        // Verificar tamaño del archivo - 10MB máximo para PDFs
-        $maxPdfSize = 10 * 1024 * 1024;
-        if ($pdfFilesize > $maxPdfSize) {
-            echo json_encode(['success' => false, 'message' => 'El archivo PDF es demasiado grande. Tamaño máximo: 10MB']);
-            exit;
-        }
-        
-        // Generar nombre único para el PDF
-        $newPdfName = 'pdf_' . time() . '_' . uniqid() . '.pdf';
-        $pdfTargetPath = 'uploads/pdfs/' . $newPdfName;
-        
-        // Mover archivo al directorio de destino
-        if (move_uploaded_file($_FILES['pdf']['tmp_name'], $pdfTargetPath)) {
-            $pdfUrl = $pdfTargetPath;
-            error_log("PDF guardado exitosamente: " . $pdfUrl);
-        } else {
-            echo json_encode(['success' => false, 'message' => 'Ha ocurrido un problema al subir el archivo PDF']);
-            exit;
-        }
-    }
-
     try {
-        error_log("=== INSERTANDO EN BASE DE DATOS ===");
-        error_log("Valores a insertar:");
-        error_log("especie: " . $especie);
-        error_log("nombre_comun: " . $nombre_comun);
-        error_log("edad: " . $edad);
-        error_log("estado: " . $estado);
-        error_log("fotoUrl: " . $fotoUrl);
-        error_log("altura: " . $altura);
-        error_log("diametroTronco: " . $diametroTronco);
-        error_log("diametro_copa: " . $diametro_copa);
-        error_log("codigo_arbol: " . $codigo_arbol);
-        error_log("latitud: " . $latitud);
-        error_log("longitud: " . $longitud);
-        error_log("propiedad: " . $propiedad);
-        error_log("otb: " . $otb);
-        error_log("nombre_area_verde: " . $nombre_area_verde);
-        error_log("inspector: " . $inspector);
-        error_log("pdfUrl: " . ($pdfUrl ?? 'NULL'));
-        error_log("fecha_registro: " . $fecha_registro);
-        error_log("hora_registro: " . $hora_registro);
+        // Debug información recibida
+        error_log("=== PROCESANDO NUEVO ÁRBOL ===");
+        error_log("Datos POST: " . print_r($_POST, true));
+        error_log("Archivos: " . print_r($_FILES, true));
+        error_log("Hora Bolivia: " . date('Y-m-d H:i:s'));
         
-        // Crear coordenadas POINT para MySQL
+        // ===============================================
+        // RECOPILAR Y VALIDAR DATOS DEL FORMULARIO
+        // ===============================================
+        
+        $especie = trim($_POST['especie'] ?? '');
+        $nombre_comun = trim($_POST['nombre_comun'] ?? '');
+        $codigo_arbol = trim($_POST['codigo_arbol'] ?? '');
+        $edad = isset($_POST['edad']) && is_numeric($_POST['edad']) ? intval($_POST['edad']) : 0;
+        $estado = trim($_POST['estado'] ?? '');
+        $altura = isset($_POST['altura']) && is_numeric($_POST['altura']) ? floatval($_POST['altura']) : 0;
+        $diametroTronco = isset($_POST['diametroTronco']) && is_numeric($_POST['diametroTronco']) ? floatval($_POST['diametroTronco']) : 0;
+        $diametro_copa = isset($_POST['diametro_copa']) && is_numeric($_POST['diametro_copa']) ? floatval($_POST['diametro_copa']) : 0;
+        $latitud = isset($_POST['lat']) && is_numeric($_POST['lat']) ? floatval($_POST['lat']) : 0;
+        $longitud = isset($_POST['lng']) && is_numeric($_POST['lng']) ? floatval($_POST['lng']) : 0;
+        $propiedad = trim($_POST['propiedad'] ?? '');
+        $otb = trim($_POST['otb'] ?? '');
+        $nombre_area_verde = trim($_POST['nombre_area_verde'] ?? '');
+        $inspector = trim($_POST['inspector'] ?? '');
+        
+        // ===============================================
+        // VALIDACIONES DE CAMPOS OBLIGATORIOS
+        // ===============================================
+        
+        $validations = [
+            ['field' => $especie, 'message' => 'El campo "Especie del Árbol" es obligatorio'],
+            ['field' => $nombre_comun, 'message' => 'El campo "Nombre Común" es obligatorio'],
+            ['field' => $codigo_arbol, 'message' => 'El código del árbol es obligatorio'],
+            ['field' => $estado, 'message' => 'Debe seleccionar un estado/categoría'],
+            ['field' => $propiedad, 'message' => 'El campo "Propiedad" es obligatorio'],
+            ['field' => $otb, 'message' => 'El campo "OTB" es obligatorio'],
+            ['field' => $nombre_area_verde, 'message' => 'El campo "Nombre del Área Verde" es obligatorio'],
+            ['field' => $inspector, 'message' => 'El campo "Inspector" es obligatorio'],
+        ];
+        
+        foreach ($validations as $validation) {
+            if (empty($validation['field'])) {
+                echo json_encode(['success' => false, 'message' => $validation['message']]);
+                exit;
+            }
+        }
+        
+        // Validaciones numéricas
+        if ($edad <= 0) {
+            echo json_encode(['success' => false, 'message' => 'La edad debe ser mayor a 0']);
+            exit;
+        }
+        
+        if ($altura <= 0) {
+            echo json_encode(['success' => false, 'message' => 'La altura debe ser mayor a 0']);
+            exit;
+        }
+        
+        if ($diametroTronco <= 0) {
+            echo json_encode(['success' => false, 'message' => 'El diámetro del tronco debe ser mayor a 0']);
+            exit;
+        }
+        
+        if ($diametro_copa <= 0) {
+            echo json_encode(['success' => false, 'message' => 'El diámetro de la copa debe ser mayor a 0']);
+            exit;
+        }
+        
+        // Validar coordenadas
+        if ($latitud == 0 || $longitud == 0) {
+            echo json_encode(['success' => false, 'message' => 'Debe seleccionar una ubicación válida']);
+            exit;
+        }
+        
+        // Validar formato del código
+        if (!preg_match('/^[A-Za-z0-9\-_]+$/', $codigo_arbol)) {
+            echo json_encode(['success' => false, 'message' => 'El código solo puede contener letras, números, guiones (-) y guiones bajos (_)']);
+            exit;
+        }
+        
+        // ===============================================
+        // VERIFICAR CÓDIGO ÚNICO
+        // ===============================================
+        
+        $checkStmt = $conn->prepare("SELECT id FROM arboles WHERE codigo_arbol = ?");
+        if (!$checkStmt) {
+            echo json_encode(['success' => false, 'message' => 'Error al verificar código: ' . $conn->error]);
+            exit;
+        }
+        
+        $checkStmt->bind_param("s", $codigo_arbol);
+        $checkStmt->execute();
+        $checkResult = $checkStmt->get_result();
+        
+        if ($checkResult->num_rows > 0) {
+            echo json_encode(['success' => false, 'message' => 'Ya existe un árbol con el código: ' . $codigo_arbol]);
+            $checkStmt->close();
+            exit;
+        }
+        $checkStmt->close();
+        
+        // ===============================================
+        // PROCESAR ARCHIVOS
+        // ===============================================
+        
+        // Procesar imagen (obligatoria)
+        if (!isset($_FILES['foto']) || $_FILES['foto']['error'] !== 0) {
+            echo json_encode(['success' => false, 'message' => 'Debe seleccionar una imagen del árbol']);
+            exit;
+        }
+        
+        $imageResult = processImageFile($_FILES['foto']);
+        if (!$imageResult['success']) {
+            echo json_encode(['success' => false, 'message' => $imageResult['message']]);
+            exit;
+        }
+        $fotoUrl = $imageResult['path'];
+        
+        // Procesar PDF (opcional)
+        $pdfUrl = null;
+        if (isset($_FILES['pdf']) && $_FILES['pdf']['error'] === 0) {
+            $pdfResult = processPdfFile($_FILES['pdf']);
+            if (!$pdfResult['success']) {
+                echo json_encode(['success' => false, 'message' => $pdfResult['message']]);
+                exit;
+            }
+            $pdfUrl = $pdfResult['path'];
+        }
+        
+        // ===============================================
+        // INSERTAR EN BASE DE DATOS
+        // ===============================================
+        
+        $fecha_registro = date('Y-m-d');
+        $hora_registro = date('H:i:s');
         $coordenadas = "POINT(" . $longitud . " " . $latitud . ")";
         
-        // Insertar en la base de datos usando prepared statement - CONSULTA CORREGIDA
+        error_log("Insertando árbol en BD con código: " . $codigo_arbol);
+        
         $stmt = $conn->prepare("INSERT INTO arboles (
             especie, nombre_comun, edad, estado, fotoUrl, altura, diametroTronco, 
             diametro_copa, codigo_arbol, latitud, longitud, coordenadas,
@@ -321,154 +321,117 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         )");
         
         if (!$stmt) {
-            error_log("ERROR: No se pudo preparar statement de inserción: " . $conn->error);
             echo json_encode(['success' => false, 'message' => 'Error al preparar consulta: ' . $conn->error]);
             exit;
         }
-
-        // CORREGIR bind_param - orden correcto de parámetros
+        
         $stmt->bind_param("ssissddssddssssssss", 
-            $especie,           // s - string
-            $nombre_comun,      // s - string  
-            $edad,              // i - integer
-            $estado,            // s - string
-            $fotoUrl,           // s - string
-            $altura,            // d - double
-            $diametroTronco,    // d - double
-            $diametro_copa,     // d - double
-            $codigo_arbol,      // s - string
-            $latitud,           // d - double
-            $longitud,          // d - double
-            $coordenadas,       // s - string (para ST_GeomFromText)
-            $propiedad,         // s - string
-            $otb,               // s - string
-            $nombre_area_verde, // s - string
-            $inspector,         // s - string
-            $pdfUrl,            // s - string (puede ser null)
-            $fecha_registro,    // s - string
-            $hora_registro      // s - string
+            $especie, $nombre_comun, $edad, $estado, $fotoUrl, $altura, $diametroTronco, 
+            $diametro_copa, $codigo_arbol, $latitud, $longitud, $coordenadas,
+            $propiedad, $otb, $nombre_area_verde, $inspector, $pdfUrl, 
+            $fecha_registro, $hora_registro
         );
-
-        if ($stmt->execute()) {
-            $lastId = $conn->insert_id;
-            error_log("INSERT EXITOSO. ID generado: " . $lastId);
-
-            // CONSTRUCCIÓN CORRECTA DE LA URL - MANTENIENDO EL FORMATO ORIGINAL
-            $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
-            $domain = $_SERVER['HTTP_HOST'];
-            
-            // Obtener el directorio base del proyecto
-            $currentScript = $_SERVER['SCRIPT_NAME']; // Ej: /proyecto/administrador.php
-            $projectDir = dirname($currentScript);    // Ej: /proyecto
-            
-            // Normalizar el directorio base
-            if ($projectDir === '/' || $projectDir === '\\') {
-                $projectDir = '';
-            }
-            
-            // Construir la URL usando el formato que ya funcionaba
-            $treeUrl = $protocol . "://" . $domain . $projectDir . "/index.php?tree_id=" . $lastId;
-            
-            // Debug para verificar la URL generada
-            error_log("=== URL GENERATION DEBUG ===");
-            error_log("Protocol: " . $protocol);
-            error_log("Domain: " . $domain);
-            error_log("Project Dir: '" . $projectDir . "'");
-            error_log("Tree ID: " . $lastId);
-            error_log("Final URL: " . $treeUrl);
-            error_log("============================");
-
-            // Generar el código QR con la URL correcta
-            $qrFilename = 'qr_codes/qr_' . $lastId . '.png';
-            try {
-                // Asegurar que el directorio existe
-                if (!file_exists('qr_codes/')) {
-                    if (!mkdir('qr_codes/', 0777, true)) {
-                        error_log("ERROR: No se pudo crear directorio qr_codes/");
-                        throw new Exception("No se pudo crear directorio para QR");
-                    }
-                }
-                
-                // Eliminar QR anterior si existe
-                if (file_exists($qrFilename)) {
-                    unlink($qrFilename);
-                }
-                
-                // Generar el nuevo QR con la URL limpia
-                QRcode::png($treeUrl, $qrFilename, QR_ECLEVEL_L, 4);
-                
-                // Verificar que el archivo se creó
-                if (!file_exists($qrFilename)) {
-                    throw new Exception("No se pudo generar el código QR");
-                }
-                
-                // Actualizar el registro con la URL del QR
-                $updateStmt = $conn->prepare("UPDATE arboles SET qrUrl = ? WHERE id = ?");
-                if ($updateStmt) {
-                    $updateStmt->bind_param("si", $qrFilename, $lastId);
-                    if ($updateStmt->execute()) {
-                        error_log("QR URL actualizada correctamente en BD");
-                    }
-                    $updateStmt->close();
-                }
-                
-                error_log("QR generado exitosamente apuntando a: " . $treeUrl);
-                
-            } catch (Exception $e) {
-                error_log("Error al generar QR: " . $e->getMessage());
-                // No fallar el registro completo por el QR
-            }
-            
-            echo json_encode([
-                'success' => true, 
-                'message' => 'Árbol registrado exitosamente',
-                'id' => $lastId,
-                'qr_url' => $treeUrl,
-                'qr_file' => $qrFilename,
-                'timestamp' => date('Y-m-d H:i:s')  // Mostrar timestamp de Bolivia
-            ]);
-            
-            $stmt->close();
+        
+        if (!$stmt->execute()) {
+            echo json_encode(['success' => false, 'message' => 'Error al guardar: ' . $stmt->error]);
             exit;
         }
+        
+        $lastId = $conn->insert_id;
+        error_log("Árbol insertado con ID: " . $lastId);
+        
+        // ===============================================
+        // GENERAR CÓDIGO QR
+        // ===============================================
+        
+        $baseUrl = getBaseUrl();
+        $treeUrl = $baseUrl . "/index.php?tree_id=" . $lastId;
+        
+        $qrResult = generateQR($lastId, $treeUrl);
+        
+        // Actualizar registro con URL del QR si se generó correctamente
+        if ($qrResult['success']) {
+            $updateStmt = $conn->prepare("UPDATE arboles SET qrUrl = ? WHERE id = ?");
+            if ($updateStmt) {
+                $qrFilename = $qrResult['filename'];
+                $updateStmt->bind_param("si", $qrFilename, $lastId);
+                $updateStmt->execute();
+                $updateStmt->close();
+                error_log("QR generado y actualizado en BD: " . $qrFilename);
+            }
+        }
+        
+        // ===============================================
+        // RESPUESTA EXITOSA
+        // ===============================================
+        
+        $response = [
+            'success' => true, 
+            'message' => 'Árbol registrado exitosamente',
+            'id' => $lastId,
+            'qr_url' => $treeUrl,
+            'qr_file' => $qrResult['success'] ? $qrResult['filename'] : null,
+            'timestamp' => date('Y-m-d H:i:s')
+        ];
+        
+        echo json_encode($response);
+        $stmt->close();
+        exit;
+        
     } catch (Exception $e) {
-        error_log("EXCEPCIÓN en try-catch: " . $e->getMessage());
-        echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
+        error_log("EXCEPCIÓN: " . $e->getMessage());
+        echo json_encode(['success' => false, 'message' => 'Error del servidor: ' . $e->getMessage()]);
         exit;
     }
 }
 
-// Consulta para mostrar árboles
+// ===============================================
+// CONSULTAR ÁRBOLES EXISTENTES
+// ===============================================
+
 $sql = "SELECT 
     id, especie, nombre_comun, edad, estado, fotoUrl, altura, diametroTronco, 
     diametro_copa, codigo_arbol, ST_AsText(coordenadas) as coordenadas, 
     latitud, longitud, propiedad, otb, nombre_area_verde, inspector, 
     pdfUrl, qrUrl, DATE_FORMAT(fecha_registro, '%d/%m/%Y') as fecha_formato, 
     hora_registro 
-FROM arboles ORDER BY fecha_registro DESC, hora_registro DESC";
+FROM arboles 
+ORDER BY fecha_registro DESC, hora_registro DESC";
 
 $result = $conn->query($sql);
-
-// Array para almacenar los árboles
 $arboles = [];
+
 if ($result && $result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
         $arboles[] = $row;
     }
 }
+
 $conn->close();
 ?>
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SkyGreen - Administrador</title>
+    
+    <!-- =============================================== -->
+    <!-- LIBRERÍAS EXTERNAS -->
+    <!-- =============================================== -->
+    
     <script src="https://api.mapbox.com/mapbox-gl-js/v2.8.1/mapbox-gl.js"></script>
     <link href="https://api.mapbox.com/mapbox-gl-js/v2.8.1/mapbox-gl.css" rel="stylesheet" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- =============================================== -->
+    <!-- ESTILOS CSS -->
+    <!-- =============================================== -->
+    
     <style>
+        /* Reset y configuración base */
         * {
             margin: 0;
             padding: 0;
@@ -481,6 +444,10 @@ $conn->close();
             min-height: 100vh;
             color: #333;
         }
+
+        /* =============================================== */
+        /* HEADER Y NAVEGACIÓN */
+        /* =============================================== */
 
         .header {
             background: white;
@@ -506,12 +473,12 @@ $conn->close();
             font-size: 1.8rem;
             font-weight: bold;
             color: #333;
-            font-family: 'Arciform', 'Poppins', sans-serif;
         }
 
-        .logo i {
-            margin-right: 0.5rem;
-            color: #482e83;
+        .logo-img {
+            height: 50px;
+            width: auto;
+            vertical-align: middle;
         }
 
         .nav-links {
@@ -531,6 +498,10 @@ $conn->close();
             color: #333;
         }
 
+        /* =============================================== */
+        /* LAYOUT PRINCIPAL */
+        /* =============================================== */
+
         .container {
             max-width: 1400px;
             margin: 0 auto;
@@ -547,7 +518,6 @@ $conn->close();
             font-weight: 300;
             color: #333;
             margin-bottom: 1rem;
-            font-family: 'Arciform', 'Poppins', sans-serif;
         }
 
         .admin-subtitle {
@@ -566,6 +536,10 @@ $conn->close();
             margin-bottom: 2rem;
         }
 
+        /* =============================================== */
+        /* FORMULARIO */
+        /* =============================================== */
+
         .form-card {
             background: white;
             border-radius: 8px;
@@ -583,7 +557,6 @@ $conn->close();
             margin-bottom: 1.5rem;
             display: flex;
             align-items: center;
-            font-family: 'Arciform', 'Poppins', sans-serif;
         }
 
         .form-title i {
@@ -635,7 +608,7 @@ $conn->close();
             color: #555;
         }
 
-        .form-input {
+        .form-input, .form-select {
             width: 100%;
             padding: 0.75rem 1rem;
             border: 1px solid #dee2e6;
@@ -645,28 +618,19 @@ $conn->close();
             background: white;
         }
 
-        .form-input:focus {
+        .form-input:focus, .form-select:focus {
             outline: none;
             border-color: #482e83;
-            box-shadow: 0 0 0 2px rgba(45, 80, 22, 0.1);
+            box-shadow: 0 0 0 2px rgba(72, 46, 131, 0.1);
         }
 
         .form-select {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            border: 1px solid #dee2e6;
-            border-radius: 4px;
-            font-size: 1rem;
-            background: white;
             cursor: pointer;
-            transition: all 0.3s ease;
         }
 
-        .form-select:focus {
-            outline: none;
-            border-color: #3ebeab;
-            box-shadow: 0 0 0 2px rgba(45, 80, 22, 0.1);
-        }
+        /* =============================================== */
+        /* SUBIDA DE ARCHIVOS */
+        /* =============================================== */
 
         .file-input-container {
             position: relative;
@@ -727,6 +691,10 @@ $conn->close();
             color: #482e83;
         }
 
+        /* =============================================== */
+        /* BOTONES */
+        /* =============================================== */
+
         .btn {
             padding: 0.75rem 1.5rem;
             border: none;
@@ -747,7 +715,7 @@ $conn->close();
         }
 
         .btn-primary:hover {
-            background: #1a2f0c;
+            background: #3a235f;
         }
 
         .btn-secondary {
@@ -756,7 +724,7 @@ $conn->close();
         }
 
         .btn-secondary:hover {
-            background: #5a6268;
+            background: #2d9284;
         }
 
         .btn:disabled {
@@ -769,6 +737,10 @@ $conn->close();
             gap: 1rem;
             margin-top: 1rem;
         }
+
+        /* =============================================== */
+        /* MAPA */
+        /* =============================================== */
 
         .map-card {
             background: white;
@@ -785,7 +757,6 @@ $conn->close();
             margin-bottom: 1rem;
             display: flex;
             align-items: center;
-            font-family: 'Arciform', 'Poppins', sans-serif;
         }
 
         .map-title i {
@@ -817,6 +788,10 @@ $conn->close();
             color: #3ebeab;
         }
 
+        /* =============================================== */
+        /* MARCADORES Y POPUPS */
+        /* =============================================== */
+
         .tree-marker {
             background-image: url('https://cdn2.iconfinder.com/data/icons/miscellaneous-iii-glyph-style/150/tree-512.png');
             background-size: cover;
@@ -829,61 +804,6 @@ $conn->close();
 
         .tree-marker:hover {
             transform: scale(1.1);
-        }
-
-        .location-hint {
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 4px;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            color: #495057;
-            font-size: 0.9rem;
-        }
-
-        .location-hint i {
-            margin-right: 0.5rem;
-            color: #3ebeab;
-        }
-
-        .success-message {
-            background: #d4edda;
-            color: #482e83;
-            border: 1px solid #c3e6cb;
-            padding: 1rem;
-            border-radius: 4px;
-            margin-bottom: 1rem;
-            display: none;
-        }
-
-        @media (max-width: 768px) {
-            .content-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .form-row, .form-row-four {
-                grid-template-columns: 1fr;
-            }
-
-            .nav {
-                padding: 0 1rem;
-            }
-
-            .nav-links {
-                display: none;
-            }
-
-            .admin-title {
-                font-size: 2rem;
-            }
-
-            .container {
-                padding: 1rem;
-            }
-
-            #map {
-                height: 350px;
-            }
         }
 
         .mapboxgl-popup-content {
@@ -926,36 +846,104 @@ $conn->close();
         }
 
         .view-tree-btn:hover {
-            background: #1a2f0c;
+            background: #2d9284;
             color: white;
         }
+
+        /* =============================================== */
+        /* UTILITARIOS */
+        /* =============================================== */
+
+        .location-hint {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            color: #495057;
+            font-size: 0.9rem;
+        }
+
+        .location-hint i {
+            margin-right: 0.5rem;
+            color: #3ebeab;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #482e83;
+            border: 1px solid #c3e6cb;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        /* =============================================== */
+        /* ANIMACIONES */
+        /* =============================================== */
 
         @keyframes slideIn {
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
 
-        .logo-img {
-  height: 50px;   /* ajusta el tamaño del logo */
-  width: auto;    /* mantiene la proporción */
-  vertical-align: middle; /* lo alinea con el menú */
-}
+        /* =============================================== */
+        /* RESPONSIVE DESIGN */
+        /* =============================================== */
 
+        @media (max-width: 768px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-row, .form-row-four {
+                grid-template-columns: 1fr;
+            }
+
+            .nav {
+                padding: 0 1rem;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .admin-title {
+                font-size: 2rem;
+            }
+
+            .container {
+                padding: 1rem;
+            }
+
+            #map {
+                height: 350px;
+            }
+        }
     </style>
 </head>
 
 <body>
+    <!-- =============================================== -->
+    <!-- HEADER Y NAVEGACIÓN -->
+    <!-- =============================================== -->
+    
     <header class="header">
         <nav class="nav">
             <a href="#home" class="logo">
-        <img src="img/logoemavrita.png" alt="Emavra Logo" class="logo-img">
-      </a>
+                <img src="img/logoemavrita.png" alt="Emavra Logo" class="logo-img">
+            </a>
             <ul class="nav-links">
                 <li><a href="index.php">Volver Al Inicio</a></li>
             </ul>
         </nav>
     </header>
 
+    <!-- =============================================== -->
+    <!-- CONTENIDO PRINCIPAL -->
+    <!-- =============================================== -->
+    
     <div class="container">
         <div class="admin-header">
             <h1 class="admin-title">Panel de Administración</h1>
@@ -971,6 +959,10 @@ $conn->close();
         </div>
 
         <div class="content-grid">
+            <!-- =============================================== -->
+            <!-- FORMULARIO DE REGISTRO -->
+            <!-- =============================================== -->
+            
             <div class="form-card">
                 <h2 class="form-title">
                     <i class="fas fa-plus-circle"></i>
@@ -986,18 +978,18 @@ $conn->close();
                         </div>
                         
                         <div class="form-group">
-                            <div class="form-group">
-                                <label class="form-label">
-                                    <i class="fas fa-tree"></i> Especie Del Árbol
-                                </label>
-                                <input type="text" name="especie" class="form-input" placeholder="Ej: Molle" required />
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">
-                                    <i class="fas fa-tree"></i> Nombre Común
-                                </label>
-                                <input type="text" name="nombre_comun" class="form-input" placeholder="Ej: 5" required />
-                            </div>
+                            <label class="form-label">
+                                <i class="fas fa-tree"></i> Especie Del Árbol
+                            </label>
+                            <input type="text" name="especie" class="form-input" placeholder="Ej: Molle" required />
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-seedling"></i> Nombre Común
+                            </label>
+                            <input type="text" name="nombre_comun" class="form-input" placeholder="Ej: Ceibo" required />
+                        </div>
 
                         <div class="form-row">
                             <div class="form-group">
@@ -1043,18 +1035,21 @@ $conn->close();
                                 </label>
                                 <input type="text" name="codigo_arbol" class="form-input" placeholder="Ej: P1, P2" required minlength="1"/>
                             </div>
+                        </div>
+
+                        <div class="form-row">
                             <div class="form-group">
-        <label class="form-label">
-            <i class="fas fa-map-marker-alt"></i> Latitud
-        </label>
-        <input type="number" step="0.000001" name="lat" id="latInput" class="form-input" placeholder="Ej: -17.393838" />
-    </div>
-    <div class="form-group">
-        <label class="form-label">
-            <i class="fas fa-map-marker-alt"></i> Longitud
-        </label>
-        <input type="number" step="0.000001" name="lng" id="lngInput" class="form-input" placeholder="Ej: -66.156977" />
-    </div>
+                                <label class="form-label">
+                                    <i class="fas fa-map-marker-alt"></i> Latitud
+                                </label>
+                                <input type="number" step="0.000001" name="lat" id="latInput" class="form-input" placeholder="Ej: -17.393838" />
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-map-marker-alt"></i> Longitud
+                                </label>
+                                <input type="number" step="0.000001" name="lng" id="lngInput" class="form-input" placeholder="Ej: -66.156977" />
+                            </div>
                         </div>
 
                         <div class="form-group">
@@ -1073,13 +1068,13 @@ $conn->close();
                         
                         <div class="form-group">
                             <label class="form-label">
-                                <i class="fas fa-file-pdf"></i> PDF Informativo 
+                                <i class="fas fa-file-pdf"></i> PDF Informativo (Opcional)
                             </label>
                             <div class="file-input-container">
                                 <input type="file" id="pdf" name="pdf" class="file-input" accept=".pdf">
                                 <label for="pdf" class="file-input-label">
                                     <i class="fas fa-cloud-upload-alt"></i>
-                                    Seleccionar PDF del árbol 
+                                    Seleccionar PDF del árbol
                                 </label>
                             </div>
                             <div id="pdfPreview" class="file-preview"></div>
@@ -1155,25 +1150,34 @@ $conn->close();
                 </form>
             </div>
 
+            <!-- =============================================== -->
+            <!-- MAPA DE UBICACIÓN -->
+            <!-- =============================================== -->
             
-        </div>
-        <div class="map-card">
+            <div class="map-card">
                 <h2 class="map-title">
                     <i class="fas fa-map"></i>
                     Mapa de Ubicación
                 </h2>
                 <div id="map"></div>
                 
-                <!-- Display de coordenadas -->
                 <div class="coordinates-display" id="coordinatesDisplay">
                     <strong>Coordenadas actuales:</strong><br>
                     <span id="currentCoords">Selecciona un punto en el mapa</span>
                 </div>
             </div>
+        </div>
     </div>
 
+    <!-- =============================================== -->
+    <!-- JAVASCRIPT -->
+    <!-- =============================================== -->
+    
     <script>
-        // Mapbox token
+        // ===============================================
+        // CONFIGURACIÓN INICIAL
+        // ===============================================
+        
         mapboxgl.accessToken = 'pk.eyJ1IjoiYWxlc3NpcyIsImEiOiJjbGcxbHBtbHQwdDU5M2RubDFodjY3a2x0In0.NXe43GdM4PJBj7ow0Dnkpw';
 
         const map = new mapboxgl.Map({
@@ -1185,12 +1189,30 @@ $conn->close();
             bearing: -17.6
         });
 
+        // Variables globales
         let marker, lng, lat;
-
-        // Referencias a los inputs de coordenadas
         let latInput, lngInput;
 
-        // Función para actualizar las coordenadas mostradas y los inputs
+        // ===============================================
+        // FUNCIONES AUXILIARES
+        // ===============================================
+        
+        /**
+         * Obtener la URL base del proyecto
+         */
+        function getBaseUrl() {
+            const protocol = window.location.protocol;
+            const hostname = window.location.hostname;
+            const port = window.location.port ? ':' + window.location.port : '';
+            const pathname = window.location.pathname;
+            const directory = pathname.substring(0, pathname.lastIndexOf('/'));
+            
+            return protocol + '//' + hostname + port + directory;
+        }
+
+        /**
+         * Actualizar display de coordenadas y inputs
+         */
         function updateCoordinatesDisplay(longitude, latitude) {
             const coordsElement = document.getElementById('currentCoords');
             if (longitude && latitude) {
@@ -1199,7 +1221,6 @@ $conn->close();
                     <strong>Longitud:</strong> ${longitude.toFixed(6)}
                 `;
                 
-                // Actualizar los inputs sin disparar eventos si están disponibles
                 if (latInput && lngInput) {
                     latInput.value = latitude.toFixed(6);
                     lngInput.value = longitude.toFixed(6);
@@ -1213,29 +1234,25 @@ $conn->close();
             }
         }
 
-        // Función para actualizar el mapa desde los inputs de coordenadas
+        /**
+         * Actualizar mapa desde inputs de coordenadas
+         */
         function updateMapFromInputs() {
             if (!latInput || !lngInput) return;
             
             const inputLat = parseFloat(latInput.value);
             const inputLng = parseFloat(lngInput.value);
             
-            // Validar que las coordenadas son números válidos
-            if (isNaN(inputLat) || isNaN(inputLng)) {
-                return;
-            }
+            if (isNaN(inputLat) || isNaN(inputLng)) return;
             
-            // Validar rangos básicos de coordenadas
             if (inputLat < -90 || inputLat > 90 || inputLng < -180 || inputLng > 180) {
                 showNotification('Las coordenadas están fuera del rango válido', 'error');
                 return;
             }
             
-            // Actualizar variables globales
             lng = inputLng;
             lat = inputLat;
             
-            // Actualizar el marcador en el mapa
             if (marker) {
                 marker.setLngLat([inputLng, inputLat]);
             } else {
@@ -1254,13 +1271,11 @@ $conn->close();
                 });
             }
             
-            // Centrar el mapa en las nuevas coordenadas
             map.flyTo({
                 center: [inputLng, inputLat],
                 zoom: 17
             });
             
-            // Actualizar display de coordenadas
             const coordsElement = document.getElementById('currentCoords');
             coordsElement.innerHTML = `
                 <strong>Latitud:</strong> ${inputLat.toFixed(6)}<br>
@@ -1268,25 +1283,55 @@ $conn->close();
             `;
         }
 
-        // Preview de archivo imagen
+        /**
+         * Mostrar notificación temporal
+         */
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 1rem 1.5rem;
+                border-radius: 10px;
+                font-weight: 500;
+                z-index: 10000;
+                animation: slideIn 0.3s ease;
+                background: ${type === 'success' ? '#d4edda' : '#f8d7da'};
+                color: ${type === 'success' ? '#155724' : '#721c24'};
+                border: 1px solid ${type === 'success' ? '#c3e6cb' : '#f5c6cb'};
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            `;
+            notification.innerHTML = `<i class="fas fa-${type === 'success' ? 'check' : 'exclamation'}-circle"></i> ${message}`;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 4000);
+        }
+
+        // ===============================================
+        // EVENT LISTENERS DE ARCHIVOS
+        // ===============================================
+        
+        // Preview de imagen
         document.getElementById('foto').addEventListener('change', function(e) {
             const file = e.target.files[0];
             const preview = document.getElementById('filePreview');
             
             if (file) {
-                // Validar tipo de archivo
                 const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
                 if (!allowedTypes.includes(file.type)) {
-                    showNotification('Por favor selecciona un archivo de imagen válido (JPG, PNG, GIF)', 'error');
+                    showNotification('Selecciona un archivo de imagen válido (JPG, PNG, GIF)', 'error');
                     e.target.value = '';
                     preview.innerHTML = '';
                     return;
                 }
                 
-                // Validar tamaño (5MB máximo)
                 const maxSize = 5 * 1024 * 1024;
                 if (file.size > maxSize) {
-                    showNotification('El archivo es demasiado grande. Tamaño máximo: 5MB', 'error');
+                    showNotification('El archivo es demasiado grande. Máximo: 5MB', 'error');
                     e.target.value = '';
                     preview.innerHTML = '';
                     return;
@@ -1303,7 +1348,6 @@ $conn->close();
                 };
                 reader.readAsDataURL(file);
                 
-                // Cambiar texto del label
                 document.querySelector('label[for="foto"]').innerHTML = `
                     <i class="fas fa-check-circle"></i>
                     Imagen seleccionada: ${file.name}
@@ -1317,24 +1361,22 @@ $conn->close();
             }
         });
 
-        // Preview de archivo PDF
+        // Preview de PDF
         document.getElementById('pdf').addEventListener('change', function(e) {
             const file = e.target.files[0];
             const preview = document.getElementById('pdfPreview');
             
             if (file) {
-                // Validar tipo de archivo
                 if (file.type !== 'application/pdf') {
-                    showNotification('Por favor selecciona un archivo PDF válido', 'error');
+                    showNotification('Selecciona un archivo PDF válido', 'error');
                     e.target.value = '';
                     preview.innerHTML = '';
                     return;
                 }
                 
-                // Validar tamaño (10MB máximo)
                 const maxSize = 10 * 1024 * 1024;
                 if (file.size > maxSize) {
-                    showNotification('El archivo PDF es demasiado grande. Tamaño máximo: 10MB', 'error');
+                    showNotification('El PDF es demasiado grande. Máximo: 10MB', 'error');
                     e.target.value = '';
                     preview.innerHTML = '';
                     return;
@@ -1346,7 +1388,6 @@ $conn->close();
                     </div>
                 `;
                 
-                // Cambiar texto del label
                 document.querySelector('label[for="pdf"]').innerHTML = `
                     <i class="fas fa-check-circle"></i>
                     PDF seleccionado: ${file.name}
@@ -1360,15 +1401,19 @@ $conn->close();
             }
         });
 
+        // ===============================================
+        // CONFIGURACIÓN DEL MAPA
+        // ===============================================
+        
         map.on('load', function() {
-            // Mostrar árboles existentes
             const arboles = <?php echo json_encode($arboles); ?>;
+            const baseUrl = getBaseUrl();
+            
             arboles.forEach(arbol => {
-                // Crear marcador para cada árbol
                 const el = document.createElement('div');
                 el.className = 'tree-marker';
 
-                // Color del borde según el estado
+                // Color según estado
                 switch (arbol.estado.toLowerCase()) {
                     case 'exótico':
                         el.style.border = '3px solid rgb(229, 255, 0)';
@@ -1379,8 +1424,8 @@ $conn->close();
                     default:
                         el.style.border = '3px solid #57606f';
                 }
-                const currentUrl = window.location.origin + window.location.pathname;
-        const correctQrUrl = `${currentUrl}?tree_id=${arbol.id}`;
+                
+                const correctQrUrl = `${baseUrl}/index.php?tree_id=${arbol.id}`;
 
                 const treeMarker = new mapboxgl.Marker(el)
                     .setLngLat([parseFloat(arbol.longitud), parseFloat(arbol.latitud)])
@@ -1393,7 +1438,7 @@ $conn->close();
                     <div style="max-width: 320px;">
                         <h3><i class="fas fa-tree"></i> ${arbol.especie}</h3>
                         
-                        ${arbol.fotoUrl ? `<img src="${arbol.fotoUrl}" alt="Foto del árbol" style="width: 100%; height: 180px; object-fit: cover;" />` : ''}
+                        ${arbol.fotoUrl ? `<img src="${baseUrl}/${arbol.fotoUrl}" alt="Foto del árbol" style="width: 100%; height: 180px; object-fit: cover;" />` : ''}
                         
                         <div style="margin: 10px 0; padding: 8px; background: #f8f9fa; border-radius: 4px;">
                             <p><strong>Nombre común:</strong> ${arbol.nombre_comun}</p>
@@ -1418,16 +1463,19 @@ $conn->close();
                         </div>
                         
                         <div style="text-align: center; margin-top: 15px;">
-                    <div style="font-size: 0.9rem; color: #666; margin-bottom: 8px;">
-                        
-                    </div>
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(correctQrUrl)}" 
-                         alt="QR del árbol" 
-                         style="width: 80px; height: 80px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px;" />
-                    ${arbol.pdfUrl ? `<br><a href="${arbol.pdfUrl}" target="_blank" class="view-tree-btn">
-                        <i class="fas fa-file-pdf"></i> Ver PDF
-                    </a>` : ''}
-                </div>
+                            <div style="font-size: 0.9rem; color: #666; margin-bottom: 8px;">
+                                Código QR del árbol
+                            </div>
+                            ${arbol.qrUrl ? `<img src="${baseUrl}/${arbol.qrUrl}" 
+                                 alt="QR del árbol" 
+                                 style="width: 80px; height: 80px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px;" />` : 
+                                 `<img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(correctQrUrl)}" 
+                                 alt="QR del árbol" 
+                                 style="width: 80px; height: 80px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 4px;" />`}
+                            ${arbol.pdfUrl ? `<br><a href="${baseUrl}/${arbol.pdfUrl}" target="_blank" class="view-tree-btn">
+                                <i class="fas fa-file-pdf"></i> Ver PDF
+                            </a>` : ''}
+                        </div>
                     </div>
                 `);
 
@@ -1461,21 +1509,24 @@ $conn->close();
             }
         });
 
+        // ===============================================
+        // FUNCIONES DE UBICACIÓN
+        // ===============================================
+        
+        /**
+         * Confirmar ubicación seleccionada
+         */
         function confirmarUbicacion() {
-            // Obtener valores de los inputs o de las variables globales
             const inputLat = latInput && !isNaN(parseFloat(latInput.value)) ? parseFloat(latInput.value) : null;
             const inputLng = lngInput && !isNaN(parseFloat(lngInput.value)) ? parseFloat(lngInput.value) : null;
             
-            // Usar valores de los inputs si están completos, sino usar variables globales
             const finalLat = inputLat !== null ? inputLat : lat;
             const finalLng = inputLng !== null ? inputLng : lng;
             
             if (finalLng && finalLat && finalLat !== 0 && finalLng !== 0) {
-                // Actualizar variables globales
                 lng = finalLng;
                 lat = finalLat;
                 
-                // Actualizar inputs si es necesario
                 if (latInput && latInput.value !== finalLat.toString()) {
                     latInput.value = finalLat.toFixed(6);
                 }
@@ -1486,232 +1537,19 @@ $conn->close();
                 document.getElementById('agregarArbolBtn').disabled = false;
                 showNotification('Ubicación confirmada correctamente', 'success');
             } else {
-                showNotification('Por favor ingresa o selecciona una ubicación válida en el mapa', 'error');
+                showNotification('Ingresa o selecciona una ubicación válida en el mapa', 'error');
             }
         }
 
-        // Función de debug mejorada
-        function debugFormulario() {
-            const form = document.getElementById('arbolForm');
-            console.log("=== DEBUG COMPLETO DEL FORMULARIO ===");
-            
-            // Verificar específicamente el campo codigo_arbol
-            const codigoInput = form.querySelector('[name="codigo_arbol"]');
-            console.log('Campo codigo_arbol encontrado:', codigoInput);
-            
-            if (codigoInput) {
-                console.log('Valor actual:', codigoInput.value);
-                console.log('Valor trimmed:', codigoInput.value.trim());
-                console.log('Tipo de input:', codigoInput.type);
-                console.log('Name attribute:', codigoInput.name);
-                console.log('ID attribute:', codigoInput.id);
-            } else {
-                console.error('CAMPO CODIGO_ARBOL NO ENCONTRADO!');
-            }
-            
-            // Verificar específicamente el campo especie
-            const especieInput = form.querySelector('[name="especie"]');
-            console.log('Campo especie:', especieInput);
-            if (especieInput) {
-                console.log('Especie value:', especieInput.value);
-                console.log('Especie type:', especieInput.type);
-                console.log('Especie name:', especieInput.name);
-            } else {
-                console.error('CAMPO ESPECIE NO ENCONTRADO!');
-            }
-            
-            // Crear FormData y verificar
-            const formData = new FormData(form);
-            console.log('=== FORMDATA CONTENTS ===');
-            for (let [key, value] of formData.entries()) {
-                console.log(`${key}: "${value}" (tipo: ${typeof value})`);
-            }
-        }
-
-        // Listener para detectar cambios en el input (debe ir dentro de DOMContentLoaded)
-        document.addEventListener('DOMContentLoaded', function() {
-            // Inicializar referencias a los inputs de coordenadas
-            latInput = document.getElementById('latInput');
-            lngInput = document.getElementById('lngInput');
-
-            // Event listeners para los inputs de coordenadas
-            if (latInput) {
-                latInput.addEventListener('input', function() {
-                    clearTimeout(this.timeout);
-                    this.timeout = setTimeout(() => {
-                        updateMapFromInputs();
-                    }, 1000);
-                });
-                
-                latInput.addEventListener('blur', updateMapFromInputs);
-            }
-
-            if (lngInput) {
-                lngInput.addEventListener('input', function() {
-                    clearTimeout(this.timeout);
-                    this.timeout = setTimeout(() => {
-                        updateMapFromInputs();
-                    }, 1000);
-                });
-                
-                lngInput.addEventListener('blur', updateMapFromInputs);
-            }
-
-            // Debug para el campo codigo_arbol
-            const codigoInput = document.querySelector('[name="codigo_arbol"]');
-            if (codigoInput) {
-                codigoInput.addEventListener('input', function(e) {
-                    console.log('Código cambiado a:', e.target.value);
-                });
-                
-                // Debug adicional: verificar que el campo tenga el atributo name correcto
-                console.log('Input codigo_arbol configurado:', {
-                    name: codigoInput.name,
-                    type: codigoInput.type,
-                    required: codigoInput.required,
-                    placeholder: codigoInput.placeholder
-                });
-            }
-        });
-
-        // Función submitForm corregida - VERSIÓN FINAL con coordenadas de inputs
-        function submitForm() {
-            console.log("=== INICIO SUBMIT ===");
-            
-            const form = document.getElementById('arbolForm');
-            
-            // Debug: verificar todos los campos antes de crear FormData
-            console.log("=== VERIFICACIÓN CAMPOS ANTES DE FORMDATA ===");
-            const especie = form.querySelector('[name="especie"]').value;
-            const codigo_arbol = form.querySelector('[name="codigo_arbol"]').value;
-            console.log('Especie valor:', especie);
-            console.log('Codigo arbol valor:', codigo_arbol);
-            
-            const formData = new FormData(form);
-            
-            // Debug: verificar FormData
-            console.log("=== FORMDATA FINAL ===");
-            for (let [key, value] of formData.entries()) {
-                console.log(`${key}: "${value}"`);
-            }
-            
-            // Validaciones básicas y específicas
-            if (!especie || especie.trim() === '') {
-                showNotification('El campo "Especie del Árbol" es obligatorio', 'error');
-                return;
-            }
-            
-            if (!codigo_arbol || codigo_arbol.trim() === '') {
-                showNotification('El código del árbol es obligatorio', 'error');
-                return;
-            }
-            
-            // Verificar formato válido del código
-            if (!/^[A-Za-z0-9\-_]+$/.test(codigo_arbol.trim())) {
-                showNotification('El código del árbol solo puede contener letras, números, guiones (-) y guiones bajos (_)', 'error');
-                return;
-            }
-            
-            // Validar imagen
-            if (!document.getElementById('foto').files[0]) {
-                showNotification('Por favor selecciona una imagen del árbol', 'error');
-                return;
-            }
-            
-            // Validar coordenadas - usar inputs primero, luego variables globales
-            const finalLat = latInput && !isNaN(parseFloat(latInput.value)) ? parseFloat(latInput.value) : lat;
-            const finalLng = lngInput && !isNaN(parseFloat(lngInput.value)) ? parseFloat(lngInput.value) : lng;
-
-            if (!finalLng || !finalLat || finalLng === 0 || finalLat === 0) {
-                showNotification('Por favor selecciona o ingresa una ubicación válida', 'error');
-                return;
-            }
-            
-            // Agregar coordenadas al FormData usando los valores finales
-            formData.append('lng', finalLng);
-            formData.append('lat', finalLat);
-
-            // Mostrar loading en el botón
-            const btn = document.getElementById('agregarArbolBtn');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registrando árbol...';
-            btn.disabled = true;
-
-            // Enviar datos
-            fetch('administrador.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => {
-                console.log('Response status:', response.status);
-                console.log('Response headers:', response.headers);
-                return response.text(); // Cambiar a text() primero para debug
-            })
-            .then(responseText => {
-                console.log('Response text:', responseText);
-                
-                // Intentar parsear como JSON
-                let data;
-                try {
-                    data = JSON.parse(responseText);
-                } catch (e) {
-                    console.error('Error parsing JSON:', e);
-                    console.error('Response was:', responseText);
-                    throw new Error('La respuesta del servidor no es JSON válido');
-                }
-                
-                console.log('Respuesta del servidor:', data);
-                
-                if (data.success) {
-                    document.getElementById('successMessage').style.display = 'block';
-                    form.reset();
-                    document.getElementById('filePreview').innerHTML = '';
-                    document.getElementById('pdfPreview').innerHTML = '';
-                    document.querySelector('label[for="foto"]').innerHTML = `
-                        <i class="fas fa-cloud-upload-alt"></i>
-                        Seleccionar imagen del árbol
-                    `;
-                    document.querySelector('label[for="pdf"]').innerHTML = `
-                        <i class="fas fa-cloud-upload-alt"></i>
-                        Seleccionar PDF del árbol (opcional)
-                    `;
-                    if (marker) {
-                        marker.remove();
-                        marker = null;
-                    }
-                    lng = null;
-                    lat = null;
-                    updateCoordinatesDisplay();
-                    btn.innerHTML = originalText;
-                    btn.disabled = true;
-                    
-                    showNotification('¡Árbol registrado exitosamente!', 'success');
-                    
-                    setTimeout(() => {
-                        location.reload();
-                    }, 2000);
-                } else {
-                    showNotification(data.message || 'Error al registrar el árbol', 'error');
-                    btn.innerHTML = originalText;
-                    btn.disabled = false;
-                }
-            })
-            .catch(error => {
-                console.error('Error completo:', error);
-                showNotification('Error al registrar el árbol: ' + error.message, 'error');
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            });
-        }
-
+        /**
+         * Obtener ubicación actual del usuario
+         */
         function obtenerUbicacion() {
             if (navigator.geolocation) {
-                
-                // Define las opciones para la geolocalización
                 const options = {
-                    enableHighAccuracy: true, // Solicita GPS
-                    timeout: 20000,          // Espera hasta 20 segundos
-                    maximumAge: 0            // Sin caché
+                    enableHighAccuracy: true,
+                    timeout: 20000,
+                    maximumAge: 0
                 };
 
                 navigator.geolocation.getCurrentPosition(
@@ -1719,14 +1557,11 @@ $conn->close();
                         const newLng = position.coords.longitude;
                         const newLat = position.coords.latitude;
 
-                        // Muestra la precisión de la lectura (opcional, pero útil para depurar)
-                        console.log('Precisión de la lectura (metros):', position.coords.accuracy);
+                        console.log('Precisión GPS:', position.coords.accuracy + 'm');
 
-                        // Actualizar variables globales
                         lng = newLng;
                         lat = newLat;
 
-                        // Actualizar display y los inputs
                         updateCoordinatesDisplay(newLng, newLat);
 
                         if (marker) {
@@ -1753,29 +1588,27 @@ $conn->close();
                         });
 
                         document.getElementById('agregarArbolBtn').disabled = false;
-                        showNotification('Ubicación obtenida correctamente (Precisión: ' + position.coords.accuracy.toFixed(2) + 'm)', 'success');
+                        showNotification(`Ubicación obtenida (Precisión: ${position.coords.accuracy.toFixed(2)}m)`, 'success');
                     },
                     (error) => {
-                        // Función de error con manejo mejorado
                         let message = 'Error al obtener la ubicación. ';
                         switch(error.code) {
                             case error.PERMISSION_DENIED:
-                                message += "Debes permitir el acceso a tu ubicación.";
+                                message += "Permite el acceso a tu ubicación.";
                                 break;
                             case error.POSITION_UNAVAILABLE:
-                                message += "La información de ubicación no está disponible.";
+                                message += "La ubicación no está disponible.";
                                 break;
                             case error.TIMEOUT:
-                                message += "Se agotó el tiempo de espera para obtener la ubicación de alta precisión.";
+                                message += "Tiempo agotado para obtener ubicación GPS.";
                                 break;
-                            case error.UNKNOWN_ERROR:
-                                message += "Ocurrido un error desconocido.";
+                            default:
+                                message += "Error desconocido.";
                                 break;
                         }
                         showNotification(message, 'error');
-                        console.error(error);
+                        console.error('Error geolocalización:', error);
                     },
-                    // Pasamos el objeto de opciones
                     options 
                 );
             } else {
@@ -1783,32 +1616,201 @@ $conn->close();
             }
         }
 
-        function showNotification(message, type) {
-            const notification = document.createElement('div');
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                padding: 1rem 1.5rem;
-                border-radius: 10px;
-                color: white;
-                font-weight: 500;
-                z-index: 10000;
-                animation: slideIn 0.3s ease;
-                background: ${type === 'success' ? '#d4edda' : '#f8d7da'};
-                color: ${type === 'success' ? '#155724' : '#721c24'};
-                border: 1px solid ${type === 'success' ? '#c3e6cb' : '#f5c6cb'};
-                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            `;
-            notification.innerHTML = `<i class="fas fa-${type === 'success' ? 'check' : 'exclamation'}-circle"></i> ${message}`;
+        // ===============================================
+        // FUNCIÓN PRINCIPAL DE ENVÍO
+        // ===============================================
+        
+        /**
+         * Enviar formulario al servidor
+         */
+        function submitForm() {
+            console.log("=== INICIANDO ENVÍO DE FORMULARIO ===");
             
-            document.body.appendChild(notification);
+            const form = document.getElementById('arbolForm');
+            const formData = new FormData(form);
             
-            setTimeout(() => {
-                notification.remove();
-            }, 4000);
+            // Debug FormData
+            console.log("=== DATOS A ENVIAR ===");
+            for (let [key, value] of formData.entries()) {
+                console.log(`${key}: "${value}"`);
+            }
+            
+            // ===============================================
+            // VALIDACIONES CLIENTE
+            // ===============================================
+            
+            const especie = form.querySelector('[name="especie"]').value.trim();
+            const codigo_arbol = form.querySelector('[name="codigo_arbol"]').value.trim();
+            
+            if (!especie) {
+                showNotification('El campo "Especie del Árbol" es obligatorio', 'error');
+                return;
+            }
+            
+            if (!codigo_arbol) {
+                showNotification('El código del árbol es obligatorio', 'error');
+                return;
+            }
+            
+            if (!/^[A-Za-z0-9\-_]+$/.test(codigo_arbol)) {
+                showNotification('El código solo puede contener letras, números, guiones (-) y guiones bajos (_)', 'error');
+                return;
+            }
+            
+            if (!document.getElementById('foto').files[0]) {
+                showNotification('Selecciona una imagen del árbol', 'error');
+                return;
+            }
+            
+            // Validar coordenadas
+            const finalLat = latInput && !isNaN(parseFloat(latInput.value)) ? parseFloat(latInput.value) : lat;
+            const finalLng = lngInput && !isNaN(parseFloat(lngInput.value)) ? parseFloat(lngInput.value) : lng;
+
+            if (!finalLng || !finalLat || finalLng === 0 || finalLat === 0) {
+                showNotification('Selecciona o ingresa una ubicación válida', 'error');
+                return;
+            }
+            
+            // Agregar coordenadas finales
+            formData.set('lng', finalLng);
+            formData.set('lat', finalLat);
+
+            // ===============================================
+            // ENVÍO AJAX
+            // ===============================================
+            
+            const btn = document.getElementById('agregarArbolBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registrando árbol...';
+            btn.disabled = true;
+
+            fetch('administrador.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                console.log('Estado respuesta:', response.status);
+                console.log('Respuesta OK:', response.ok);
+                
+                if (!response.ok) {
+                    throw new Error(`Error HTTP: ${response.status}`);
+                }
+                
+                return response.text();
+            })
+            .then(responseText => {
+                console.log('Longitud respuesta:', responseText.length);
+                console.log('Respuesta cruda:', responseText);
+                
+                const cleanResponseText = responseText.trim();
+                
+                let data;
+                try {
+                    data = JSON.parse(cleanResponseText);
+                } catch (e) {
+                    console.error('Error parsing JSON:', e);
+                    console.error('Respuesta limpia:', cleanResponseText);
+                    
+                    if (cleanResponseText.includes('<!DOCTYPE') || cleanResponseText.includes('<html')) {
+                        throw new Error('El servidor devolvió HTML en lugar de JSON. Verifica los logs del servidor.');
+                    } else if (cleanResponseText.includes('Fatal error') || cleanResponseText.includes('Parse error')) {
+                        throw new Error('Error PHP: ' + cleanResponseText.substring(0, 200));
+                    } else {
+                        throw new Error('Respuesta no es JSON válido: ' + cleanResponseText.substring(0, 100));
+                    }
+                }
+                
+                console.log('Datos parseados:', data);
+                
+                if (data.success) {
+                    // ===============================================
+                    // ÉXITO - LIMPIAR FORMULARIO
+                    // ===============================================
+                    
+                    document.getElementById('successMessage').style.display = 'block';
+                    form.reset();
+                    document.getElementById('filePreview').innerHTML = '';
+                    document.getElementById('pdfPreview').innerHTML = '';
+                    
+                    // Resetear labels de archivos
+                    document.querySelector('label[for="foto"]').innerHTML = `
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        Seleccionar imagen del árbol
+                    `;
+                    document.querySelector('label[for="pdf"]').innerHTML = `
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        Seleccionar PDF del árbol (opcional)
+                    `;
+                    
+                    // Limpiar mapa
+                    if (marker) {
+                        marker.remove();
+                        marker = null;
+                    }
+                    lng = null;
+                    lat = null;
+                    updateCoordinatesDisplay();
+                    
+                    // Resetear botón
+                    btn.innerHTML = originalText;
+                    btn.disabled = true;
+                    
+                    showNotification('¡Árbol registrado exitosamente!', 'success');
+                    
+                    // Recargar página después de 2 segundos
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                } else {
+                    showNotification(data.message || 'Error al registrar el árbol', 'error');
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error fetch:', error);
+                showNotification('Error al registrar: ' + error.message, 'error');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            });
         }
-</script>
+
+        // ===============================================
+        // INICIALIZACIÓN
+        // ===============================================
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM cargado - Inicializando aplicación');
+            
+            // Inicializar referencias a inputs de coordenadas
+            latInput = document.getElementById('latInput');
+            lngInput = document.getElementById('lngInput');
+
+            // Event listeners para inputs de coordenadas
+            if (latInput) {
+                latInput.addEventListener('input', function() {
+                    clearTimeout(this.timeout);
+                    this.timeout = setTimeout(() => {
+                        updateMapFromInputs();
+                    }, 1000);
+                });
+                
+                latInput.addEventListener('blur', updateMapFromInputs);
+            }
+
+            if (lngInput) {
+                lngInput.addEventListener('input', function() {
+                    clearTimeout(this.timeout);
+                    this.timeout = setTimeout(() => {
+                        updateMapFromInputs();
+                    }, 1000);
+                });
+                
+                lngInput.addEventListener('blur', updateMapFromInputs);
+            }
+
+            console.log('Aplicación inicializada correctamente');
+        });
+    </script>
 </body>
 </html>
-

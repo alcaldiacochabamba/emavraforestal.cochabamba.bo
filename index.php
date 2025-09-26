@@ -814,7 +814,7 @@ $conn->close();
   <section id="honor" class="honor-wall">
     <div class="container">
       <div class="section-header">
-        <h2 class="section-title">🌳 Muro de Héroes Anónimos</h2>
+        <h2 class="section-title">Muro de Héroes Anónimos</h2>
         <p class="section-subtitle">
           Conoce a quienes están haciendo la diferencia en nuestro ecosistema urbano.
         </p>
@@ -822,37 +822,37 @@ $conn->close();
 
       <div class="honor-grid">
         <div class="honor-card">
-          <img src="img/person1.jpg" alt="Voluntario 1" class="honor-avatar">
+          <img src="img/volun.jpg" alt="Voluntario 1" class="honor-avatar">
           <h3 class="honor-name">Voluntarios de Reforestación</h3>
           <p class="honor-contribution">🌿 Plantaron más de 100 plantines en áreas urbanas clave.</p>
         </div>
 
         <div class="honor-card">
-          <img src="img/person2.jpg" alt="Voluntario 2" class="honor-avatar">
+          <img src="img/parque.png" alt="Voluntario 2" class="honor-avatar">
           <h3 class="honor-name">Guardianes de Parques</h3>
           <p class="honor-contribution">🌿 Se dedican al cuidado y mantenimiento de jardines públicos.</p>
         </div>
 
         <div class="honor-card">
-          <img src="img/person3.jpg" alt="Voluntario 3" class="honor-avatar">
+          <img src="img/defensores.jpg" alt="Voluntario 3" class="honor-avatar">
           <h3 class="honor-name">Defensores Ambientales</h3>
           <p class="honor-contribution">🌿 Promueven el uso de plantas nativas en el paisajismo.</p>
         </div>
 
         <div class="honor-card">
-          <img src="img/person4.jpg" alt="Voluntario 4" class="honor-avatar">
+          <img src="img/edu.jpg" alt="Voluntario 4" class="honor-avatar">
           <h3 class="honor-name">Educadores Comunitarios</h3>
           <p class="honor-contribution">🌿 Lideran talleres sobre la importancia de la flora local.</p>
         </div>
 
         <div class="honor-card">
-          <img src="img/person5.jpg" alt="Voluntario 5" class="honor-avatar">
+          <img src="img/innova.jpeg" alt="Voluntario 5" class="honor-avatar">
           <h3 class="honor-name">Innovadores Ecológicos</h3>
           <p class="honor-contribution">🌿 Crearon un sistema de riego sostenible para áreas verdes.</p>
         </div>
 
         <div class="honor-card">
-          <img src="img/person6.jpg" alt="Voluntario 6" class="honor-avatar">
+          <img src="img/colabo.png" alt="Voluntario 6" class="honor-avatar">
           <h3 class="honor-name">Colaboradores Vecinales</h3>
           <p class="honor-contribution">🌿 Participan activamente en las campañas de limpieza y siembra.</p>
         </div>
@@ -888,7 +888,7 @@ $conn->close();
     <div class="container">
       <div class="footer-grid">
         <div class="footer-section">
-          <h3><i class="fas fa-leaf"></i> SkyGreen</h3>
+          <h3><i class="fas fa-leaf"></i> Emavra</h3>
           <p>
             Transformando Cochabamba hacia un futuro más verde y sostenible. 
             Conectamos la comunidad con la naturaleza través de la tecnología.
@@ -904,8 +904,8 @@ $conn->close();
 
         <div class="footer-section">
           <h3>Enlaces Útiles</h3>
-          <p><a <a href="https://www.lostiempos.com/sites/default/files/ayma2021guiadeselecciondeespeciesparaelarboladourbanodecochabambaparacompartir_1_0.pdf" style="color: #ccc;">Información Legal</a></p>
-          
+          <p><a href="https://www.lostiempos.com/sites/default/files/ayma2021guiadeselecciondeespeciesparaelarboladourbanodecochabambaparacompartir_1_0.pdf" style="color: #ccc;">Información Legal</a></p>
+          <p><a href="administrador.php" style="color: #ccc;">Registro de Arbol</a></p>
         </div>
 
         <div class="footer-section">
@@ -917,7 +917,7 @@ $conn->close();
       </div>
 
       <div class="footer-bottom">
-        <p>&copy; 2024 SkyGreen. Todos los derechos reservados.</p>
+        <p>&copy; 2025 Emavra. Todos los derechos reservados.</p>
       </div>
     </div>
   </footer>
@@ -976,6 +976,8 @@ $conn->close();
         }
 
         // Create popup content
+        const currentUrl = window.location.origin + window.location.pathname;
+        const correctQrUrl = `${currentUrl}?tree_id=${arbol.id}`;
         const popupContent = `
           <div class="popup-header">
             <i class="fas fa-tree"></i>
@@ -1018,7 +1020,11 @@ $conn->close();
           
           
           
-          <img src="${arbol.qrUrl}" alt="QR del árbol" class="qr-code">
+          <div style="text-align: center; margin-top: 15px;">
+            
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(correctQrUrl)}" 
+                 alt="QR del árbol" class="qr-code">
+          </div>
         `;
 
         // Create popup
