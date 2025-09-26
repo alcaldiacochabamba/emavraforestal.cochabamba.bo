@@ -5,18 +5,28 @@ services:
     build: .
     ports:
       - "9090:80"
-    user: "www-data"
     depends_on:
       - mysql
     volumes:
-      # Montar 
+      # Montar todo el código para desarrollo
       - .:/var/www/html
-      # Volúmenes 
+      # Volúmenes para archivos subidos (PERSISTENTES) con rutas absolutas
       - /svr/emavraforestal/uploads:/var/www/html/uploads
       - /svr/emavraforestal/qr_codes:/var/www/html/qr_codes
     environment:
       - PHP_DISPLAY_ERRORS=On
       - PHP_ERROR_REPORTING=E_ALL
+    command: >
+      bash -c "
+        # Crear directorios si no existen
+        mkdir -p /var/www/html/uploads/trees /var/www/html/uploads/pdfs /var/www/html/qr_codes &&
+        # Asignar permisos
+        chmod -R 777 /var/www/html/uploads /var/www/html/qr_codes &&
+        # Cambiar propietario a www-data
+        chown -R www-data:www-data /var/www/html &&
+        # Iniciar Apache
+        apache2-foreground
+      "
 
   mysql:
     image: mysql:8.0
