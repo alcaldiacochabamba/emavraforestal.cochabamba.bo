@@ -1,5 +1,6 @@
 <?php
-$conn = new mysqli("host.docker.internal", "root", "", "reforest", 3306);
+$conn = new mysqli("mysql", "root", "rootpassword", "reforest", 3306);
+
 if ($conn->connect_error) {
     die("Error de conexión: " . $conn->connect_error);
 }
