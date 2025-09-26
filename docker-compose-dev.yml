@@ -6,15 +6,41 @@ services:
     ports:
       - "9090:80"
     user: "www-data"
+    depends_on:
+      - mysql
     volumes:
-      # Volúmenes para archivos subidos (PERSISTENTES)
-      - ./uploads:/var/www/html/uploads
-      - ./qr_codes:/var/www/html/qr_codes
-      # Montar todo el código para desarrollo
+      # Montar 
       - .:/var/www/html
-    # Agregar red para comunicarse con MySQL local
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      # Volúmenes 
+      - /svr/emavraforestal/uploads:/var/www/html/uploads
+      - /svr/emavraforestal/qr_codes:/var/www/html/qr_codes
     environment:
       - PHP_DISPLAY_ERRORS=On
       - PHP_ERROR_REPORTING=E_ALL
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: reforest
+      MYSQL_USER: user
+      MYSQL_PASSWORD: userpassword
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    ports:
+      - "9091:80"
+    environment:
+      - PMA_HOST=mysql
+      - PMA_USER=root
+      - PMA_PASSWORD=rootpassword
+      - MYSQL_ROOT_PASSWORD=rootpassword
+    depends_on:
+      - mysql
+
+volumes:
+  mysql-data:

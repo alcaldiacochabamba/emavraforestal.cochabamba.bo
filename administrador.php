@@ -14,7 +14,7 @@ date_default_timezone_set('America/La_Paz');
 
 
 // En administrador
-$conn = new mysqli("host.docker.internal", "root", "", "reforest", 3306);
+$conn = new mysqli("mysql", "root", "rootpassword", "reforest", 3306);
 
 if ($conn->connect_error) {
     if ($_SERVER['REQUEST_METHOD'] == 'POST') {
