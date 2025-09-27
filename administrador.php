@@ -1373,7 +1373,7 @@ $conn->close();
             style: 'mapbox://styles/mapbox/streets-v11',
             center: [-66.156977, -17.393838],
             zoom: 17,
-            pitch: 50,
+            pitch: 0,
             bearing: -17.6
         });
 
@@ -1706,7 +1706,7 @@ document.getElementById('foto').addEventListener('change', function(e) {
                         offset: 25
                     })
                     .setHTML(`
-                    <div style="max-width: 320px;">
+                    <div style="max-height: 250px; overflow-y: auto; padding-right: 5px;">
                         <h3><i class="fas fa-tree"></i> ${arbol.especie}</h3>
                         
                         ${arbol.fotoUrl ? `<img src="${baseUrl}/${arbol.fotoUrl}" alt="Foto del árbol" style="width: 100%; height: 180px; object-fit: cover;" />` : ''}

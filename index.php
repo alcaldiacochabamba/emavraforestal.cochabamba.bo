@@ -225,7 +225,7 @@ $conn->close();
 
     /* About Section */
     .about {
-      padding: 50px 0;
+      padding: 60px 0;
       background: #f8f9fa;
     }
 
@@ -321,7 +321,7 @@ $conn->close();
 
     #map {
       width: calc(90% - 3rem);
-      height: 580px;
+      height: 620px;
       border-radius: 15px;
       margin: 0 auto;
     }
@@ -523,7 +523,7 @@ $conn->close();
       border-radius: 15px;
       padding: 1.2rem;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
-      max-width: 250px;
+      max-width: 300px;
     
       font-family: 'Poppins', sans-serif;
       background: white;
@@ -931,7 +931,7 @@ $conn->close();
       style: 'mapbox://styles/mapbox/outdoors-v11',
       center: [-66.156977, -17.393838],
       zoom: 17,
-      pitch: 25,
+      pitch: 0,
       bearing: -17.6
       
     });
