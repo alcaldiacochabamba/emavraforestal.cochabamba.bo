@@ -243,14 +243,14 @@ $conn->close();
     .section-title {
       font-size: 2.5rem;
       font-weight: 300;
-      color: #333;
+      color: #000000ff;
       margin-bottom: 1rem;
       font-family: 'Arciform', 'Poppins', sans-serif;
     }
 
     .section-subtitle {
       font-size: 1.1rem;
-      color: #666;
+      color: #000000ff;
       max-width: 600px;
       margin: 0 auto;
       font-family: 'Poppins', sans-serif;
@@ -293,12 +293,12 @@ $conn->close();
     .feature-title {
       font-size: 1.3rem;
       font-weight: 500;
-      color: #333;
+      color: #000000ff;
       margin-bottom: 1rem;
     }
 
     .feature-description {
-      color: #666;
+      color: #000000ff;
       line-height: 1.8;
     }
 
@@ -406,7 +406,7 @@ $conn->close();
     .honor-name {
       font-size: 1.2rem;
       font-weight: 500;
-      color: #333;
+      color: #000000ff;
       margin-bottom: 0.5rem;
     }
 

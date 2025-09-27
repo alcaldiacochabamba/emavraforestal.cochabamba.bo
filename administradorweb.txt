@@ -1,4 +1,6 @@
 <?php
+
+
 // Configurar headers para JSON desde el inicio
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     header('Content-Type: application/json; charset=utf-8');
@@ -7,11 +9,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-// Configurar límites de subida optimizados
-ini_set('upload_max_filesize', '15M');    // Aumentado para recibir archivos comprimidos
-ini_set('post_max_size', '20M');          // Aumentado proporcionalmente
+
+
+// Configurar límites de subida para móviles
+ini_set('upload_max_filesize', '10M');
+ini_set('post_max_size', '15M');
 ini_set('max_input_time', 300);
 ini_set('max_execution_time', 300);
+
+// Agregar después del error_reporting en tu administrador.php
 
 // Detectar si es un dispositivo móvil
 function isMobileDevice() {
@@ -24,16 +30,16 @@ if (isMobileDevice()) {
     error_log("=== REQUEST DESDE MÓVIL DETECTADO ===");
     error_log("User-Agent: " . ($_SERVER['HTTP_USER_AGENT'] ?? 'No definido'));
     
-    // Límites para móviles (archivos ya vienen comprimidos del frontend)
-    ini_set('upload_max_filesize', '8M');     // Reducido porque vienen comprimidos
-    ini_set('post_max_size', '12M');          // Ajustado
-    ini_set('max_execution_time', 300);       // Más tiempo para conexiones lentas
+    // Límites más conservadores para móviles
+    ini_set('upload_max_filesize', '6M');    // Reducido para móviles
+    ini_set('post_max_size', '8M');          // Reducido para móviles
+    ini_set('max_execution_time', 300);      // Más tiempo para conexiones lentas
     ini_set('max_input_time', 300);
     ini_set('memory_limit', '256M');
 } else {
     // Límites normales para desktop
-    ini_set('upload_max_filesize', '15M');
-    ini_set('post_max_size', '20M');
+    ini_set('upload_max_filesize', '10M');
+    ini_set('post_max_size', '15M');
     ini_set('max_execution_time', 180);
     ini_set('max_input_time', 180);
 }
@@ -56,12 +62,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 
-// Función processImageFile optimizada para imágenes ya comprimidas
+// Función processImageFile mejorada para móviles
 function processImageFile($file) {
     $isMobile = isMobileDevice();
     
     error_log("=== PROCESANDO IMAGEN " . ($isMobile ? "MÓVIL" : "DESKTOP") . " ===");
-    error_log("Archivo recibido: " . print_r($file, true));
+    error_log("Archivo: " . print_r($file, true));
     
     // Verificar errores de upload
     if (!isset($file) || $file['error'] !== UPLOAD_ERR_OK) {
@@ -81,7 +87,7 @@ function processImageFile($file) {
             $errorMsg .= " (Móvil - Verifique su conexión)";
         }
         
-        error_log("Error upload: " . $errorMsg);
+        error_log("Error upload móvil: " . $errorMsg);
         return ['success' => false, 'message' => $errorMsg];
     }
     
@@ -96,10 +102,10 @@ function processImageFile($file) {
         return ['success' => false, 'message' => 'No se recibió correctamente el archivo desde el dispositivo'];
     }
     
-    // Tipos MIME permitidos (más permisivos para móviles)
+    // Tipos MIME más permisivos para móviles
     $allowed = [
         "jpg" => "image/jpeg",
-        "jpeg" => "image/jpeg", 
+        "jpeg" => "image/jpeg",
         "png" => "image/png",
         "gif" => "image/gif",
         "webp" => "image/webp",  // Android común
@@ -109,31 +115,24 @@ function processImageFile($file) {
     
     // Verificar extensión
     $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-    
-    // Para archivos comprimidos desde JS, pueden venir como .jpg
-    if ($filename === 'compressed_mobile_image.jpg') {
-        $ext = 'jpg';
-        error_log("Detectado archivo comprimido desde móvil");
-    }
-    
     if (!array_key_exists($ext, $allowed)) {
         error_log("Extensión no permitida: " . $ext);
         return ['success' => false, 'message' => "Formato no soportado ($ext). Use: JPG, PNG, GIF" . ($isMobile ? ", WEBP, HEIC" : "")];
     }
     
-    // Límites ajustados para archivos ya comprimidos
-    $maxSize = $isMobile ? 3 * 1024 * 1024 : 8 * 1024 * 1024; // 3MB móvil, 8MB desktop
+    // Límites diferentes para móvil vs desktop
+    $maxSize = $isMobile ? 6 * 1024 * 1024 : 8 * 1024 * 1024; // 6MB móvil, 8MB desktop
     if ($filesize > $maxSize) {
         $maxSizeMB = round($maxSize / 1024 / 1024);
         error_log("Archivo demasiado grande: {$filesize} bytes, máximo: {$maxSize}");
         return ['success' => false, 'message' => "Imagen demasiado grande. Máximo " . ($isMobile ? "para móviles" : "") . ": {$maxSizeMB}MB"];
     }
     
-    // Verificar tipo MIME de manera flexible
+    // Verificar tipo MIME de manera más flexible para móviles
     $allowedMimes = array_values($allowed);
     
     if (!empty($filetype) && !in_array($filetype, $allowedMimes)) {
-        // Para móviles y archivos comprimidos, intentar detectar el tipo real
+        // Para móviles, intentar detectar el tipo real
         if (function_exists('finfo_open')) {
             $finfo = finfo_open(FILEINFO_MIME_TYPE);
             $detectedType = finfo_file($finfo, $tmpName);
@@ -143,12 +142,12 @@ function processImageFile($file) {
             
             if (in_array($detectedType, $allowedMimes)) {
                 $filetype = $detectedType;
-                error_log("Usando tipo detectado: $detectedType");
+                error_log("Usando tipo detectado para móvil: $detectedType");
             } else {
                 return ['success' => false, 'message' => "Tipo de archivo no soportado: $filetype"];
             }
         } else {
-            // Sin finfo, ser más permisivo con archivos comprimidos
+            // Sin finfo, ser más permisivo con móviles
             if ($isMobile && (empty($filetype) || $filetype === 'application/octet-stream')) {
                 // Validar que al menos sea una imagen válida
                 if (@getimagesize($tmpName) !== false) {
@@ -171,9 +170,8 @@ function processImageFile($file) {
     
     // Log info de la imagen
     error_log("Imagen válida - Dimensiones: {$imageInfo[0]}x{$imageInfo[1]}, Tipo: {$imageInfo[2]}");
-    error_log("Tamaño final: " . number_format($filesize / 1024 / 1024, 2) . "MB");
     
-    // Generar nombre único y guardar
+    // Generar nombre y guardar
     $newName = ($isMobile ? 'mobile_' : 'desktop_') . 'img_' . time() . '_' . uniqid() . '.' . $ext;
     $targetPath = 'uploads/trees/' . $newName;
     
@@ -186,7 +184,7 @@ function processImageFile($file) {
     }
 }
 
-// En el procesamiento POST, agregar log específico
+// En el procesamiento POST, agregar log específico para móviles
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isMobileDevice()) {
         error_log("=== PROCESAMIENTO MÓVIL INICIADO ===");
@@ -194,26 +192,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         error_log("FILES count: " . (isset($_FILES) ? count($_FILES) : 0));
         
         // Verificar si hay información del dispositivo enviada desde JS
-        if (isset($_POST['is_mobile'])) {
-            error_log("Confirmado como móvil desde frontend: " . $_POST['is_mobile']);
-        }
-        if (isset($_POST['user_agent'])) {
-            error_log("User agent desde frontend: " . $_POST['user_agent']);
+        if (isset($_POST['device_info'])) {
+            $deviceInfo = json_decode($_POST['device_info'], true);
+            error_log("Info dispositivo: " . print_r($deviceInfo, true));
         }
     }
 }
 
 // Función para debug de configuración PHP
 function debugPhpConfig() {
-    error_log("=== CONFIGURACIÓN PHP ACTUAL ===");
+    error_log("=== CONFIGURACIÓN PHP ===");
     error_log("upload_max_filesize: " . ini_get('upload_max_filesize'));
     error_log("post_max_size: " . ini_get('post_max_size'));
     error_log("max_file_uploads: " . ini_get('max_file_uploads'));
     error_log("max_input_time: " . ini_get('max_input_time'));
     error_log("max_execution_time: " . ini_get('max_execution_time'));
-    error_log("memory_limit: " . ini_get('memory_limit'));
     error_log("file_uploads: " . (ini_get('file_uploads') ? 'ON' : 'OFF'));
-    error_log("Es móvil: " . (isMobileDevice() ? 'SÍ' : 'NO'));
 }
 
 // Llamar función de debug si es necesario
