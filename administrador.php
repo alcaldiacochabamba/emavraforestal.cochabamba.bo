@@ -8,11 +8,196 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
+
+
+
 // Configurar límites de subida para móviles
 ini_set('upload_max_filesize', '10M');
 ini_set('post_max_size', '15M');
 ini_set('max_input_time', 300);
 ini_set('max_execution_time', 300);
+
+// Agregar después del error_reporting en tu administrador.php
+
+// Detectar si es un dispositivo móvil
+function isMobileDevice() {
+    $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+    return preg_match('/(android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini)/i', $userAgent);
+}
+
+// Configurar límites específicos según dispositivo
+if (isMobileDevice()) {
+    error_log("=== REQUEST DESDE MÓVIL DETECTADO ===");
+    error_log("User-Agent: " . ($_SERVER['HTTP_USER_AGENT'] ?? 'No definido'));
+    
+    // Límites más conservadores para móviles
+    ini_set('upload_max_filesize', '6M');    // Reducido para móviles
+    ini_set('post_max_size', '8M');          // Reducido para móviles
+    ini_set('max_execution_time', 300);      // Más tiempo para conexiones lentas
+    ini_set('max_input_time', 300);
+    ini_set('memory_limit', '256M');
+} else {
+    // Límites normales para desktop
+    ini_set('upload_max_filesize', '10M');
+    ini_set('post_max_size', '15M');
+    ini_set('max_execution_time', 180);
+    ini_set('max_input_time', 180);
+}
+
+// Headers específicos para móviles
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    header('Content-Type: application/json; charset=utf-8');
+    header('Cache-Control: no-cache, no-store, must-revalidate');
+    header('Pragma: no-cache');
+    header('Expires: 0');
+    
+    if (isMobileDevice()) {
+        // Headers adicionales para móviles
+        header('X-Content-Type-Options: nosniff');
+        header('Connection: close'); // Cerrar conexión después de la respuesta
+        
+        // Log específico para debug móvil
+        error_log("Content-Length móvil: " . ($_SERVER['CONTENT_LENGTH'] ?? '0'));
+        error_log("Connection móvil: " . ($_SERVER['HTTP_CONNECTION'] ?? 'No definido'));
+    }
+}
+
+// Función processImageFile mejorada para móviles
+function processImageFile($file) {
+    $isMobile = isMobileDevice();
+    
+    error_log("=== PROCESANDO IMAGEN " . ($isMobile ? "MÓVIL" : "DESKTOP") . " ===");
+    error_log("Archivo: " . print_r($file, true));
+    
+    // Verificar errores de upload
+    if (!isset($file) || $file['error'] !== UPLOAD_ERR_OK) {
+        $errorMessages = [
+            UPLOAD_ERR_INI_SIZE => 'Archivo demasiado grande (límite del servidor)',
+            UPLOAD_ERR_FORM_SIZE => 'Archivo demasiado grande (límite del formulario)',
+            UPLOAD_ERR_PARTIAL => 'El archivo se subió parcialmente - conexión interrumpida',
+            UPLOAD_ERR_NO_FILE => 'No se recibió ningún archivo',
+            UPLOAD_ERR_NO_TMP_DIR => 'Error del servidor: directorio temporal faltante',
+            UPLOAD_ERR_CANT_WRITE => 'Error del servidor: no se puede escribir',
+            UPLOAD_ERR_EXTENSION => 'Subida bloqueada por extensión PHP'
+        ];
+        
+        $errorMsg = $errorMessages[$file['error']] ?? 'Error desconocido al subir archivo';
+        
+        if ($isMobile) {
+            $errorMsg .= " (Móvil - Verifique su conexión)";
+        }
+        
+        error_log("Error upload móvil: " . $errorMsg);
+        return ['success' => false, 'message' => $errorMsg];
+    }
+    
+    $filename = $file['name'];
+    $filetype = $file['type'];
+    $filesize = $file['size'];
+    $tmpName = $file['tmp_name'];
+    
+    // Verificar archivo temporal
+    if (empty($tmpName) || !file_exists($tmpName)) {
+        error_log("Archivo temporal no existe: " . $tmpName);
+        return ['success' => false, 'message' => 'No se recibió correctamente el archivo desde el dispositivo'];
+    }
+    
+    // Tipos MIME más permisivos para móviles
+    $allowed = [
+        "jpg" => "image/jpeg",
+        "jpeg" => "image/jpeg",
+        "png" => "image/png",
+        "gif" => "image/gif",
+        "webp" => "image/webp",  // Android común
+        "heic" => "image/heic",  // iOS común
+        "heif" => "image/heif"   // iOS común
+    ];
+    
+    // Verificar extensión
+    $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+    if (!array_key_exists($ext, $allowed)) {
+        error_log("Extensión no permitida: " . $ext);
+        return ['success' => false, 'message' => "Formato no soportado ($ext). Use: JPG, PNG, GIF" . ($isMobile ? ", WEBP, HEIC" : "")];
+    }
+    
+    // Límites diferentes para móvil vs desktop
+    $maxSize = $isMobile ? 6 * 1024 * 1024 : 8 * 1024 * 1024; // 6MB móvil, 8MB desktop
+    if ($filesize > $maxSize) {
+        $maxSizeMB = round($maxSize / 1024 / 1024);
+        error_log("Archivo demasiado grande: {$filesize} bytes, máximo: {$maxSize}");
+        return ['success' => false, 'message' => "Imagen demasiado grande. Máximo " . ($isMobile ? "para móviles" : "") . ": {$maxSizeMB}MB"];
+    }
+    
+    // Verificar tipo MIME de manera más flexible para móviles
+    $allowedMimes = array_values($allowed);
+    
+    if (!empty($filetype) && !in_array($filetype, $allowedMimes)) {
+        // Para móviles, intentar detectar el tipo real
+        if (function_exists('finfo_open')) {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $detectedType = finfo_file($finfo, $tmpName);
+            finfo_close($finfo);
+            
+            error_log("Tipo original: $filetype, Tipo detectado: $detectedType");
+            
+            if (in_array($detectedType, $allowedMimes)) {
+                $filetype = $detectedType;
+                error_log("Usando tipo detectado para móvil: $detectedType");
+            } else {
+                return ['success' => false, 'message' => "Tipo de archivo no soportado: $filetype"];
+            }
+        } else {
+            // Sin finfo, ser más permisivo con móviles
+            if ($isMobile && (empty($filetype) || $filetype === 'application/octet-stream')) {
+                // Validar que al menos sea una imagen válida
+                if (@getimagesize($tmpName) !== false) {
+                    error_log("Tipo MIME vacío en móvil, pero imagen válida detectada");
+                } else {
+                    return ['success' => false, 'message' => 'El archivo no es una imagen válida'];
+                }
+            } else {
+                return ['success' => false, 'message' => "Tipo no válido: $filetype"];
+            }
+        }
+    }
+    
+    // Validación final de imagen
+    $imageInfo = @getimagesize($tmpName);
+    if ($imageInfo === false) {
+        error_log("getimagesize falló para: " . $tmpName);
+        return ['success' => false, 'message' => 'El archivo no es una imagen válida'];
+    }
+    
+    // Log info de la imagen
+    error_log("Imagen válida - Dimensiones: {$imageInfo[0]}x{$imageInfo[1]}, Tipo: {$imageInfo[2]}");
+    
+    // Generar nombre y guardar
+    $newName = ($isMobile ? 'mobile_' : 'desktop_') . 'img_' . time() . '_' . uniqid() . '.' . $ext;
+    $targetPath = 'uploads/trees/' . $newName;
+    
+    if (move_uploaded_file($tmpName, $targetPath)) {
+        error_log("Imagen guardada exitosamente: " . $targetPath);
+        return ['success' => true, 'path' => $targetPath];
+    } else {
+        error_log("Error al mover archivo: $tmpName -> $targetPath");
+        return ['success' => false, 'message' => 'Error al guardar la imagen en el servidor'];
+    }
+}
+
+// En el procesamiento POST, agregar log específico para móviles
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    if (isMobileDevice()) {
+        error_log("=== PROCESAMIENTO MÓVIL INICIADO ===");
+        error_log("POST size: " . strlen(file_get_contents('php://input')));
+        error_log("FILES count: " . (isset($_FILES) ? count($_FILES) : 0));
+        
+        // Verificar si hay información del dispositivo enviada desde JS
+        if (isset($_POST['device_info'])) {
+            $deviceInfo = json_decode($_POST['device_info'], true);
+            error_log("Info dispositivo: " . print_r($deviceInfo, true));
+        }
+    }
+}
 
 // Función para debug de configuración PHP
 function debugPhpConfig() {
@@ -88,101 +273,6 @@ function getBaseUrl() {
 /**
  * Validar y procesar archivo de imagen (VERSIÓN CORREGIDA)
  */
-function processImageFile($file) {
-    // Verificar que el archivo fue subido correctamente
-    if (!isset($file) || $file['error'] !== UPLOAD_ERR_OK) {
-        $errorMessages = [
-            UPLOAD_ERR_INI_SIZE => 'El archivo excede el tamaño máximo permitido por el servidor',
-            UPLOAD_ERR_FORM_SIZE => 'El archivo excede el tamaño máximo del formulario',
-            UPLOAD_ERR_PARTIAL => 'El archivo se subió parcialmente',
-            UPLOAD_ERR_NO_FILE => 'No se seleccionó ningún archivo',
-            UPLOAD_ERR_NO_TMP_DIR => 'Falta el directorio temporal',
-            UPLOAD_ERR_CANT_WRITE => 'Error al escribir el archivo',
-            UPLOAD_ERR_EXTENSION => 'Una extensión de PHP detuvo la subida'
-        ];
-        
-        $errorMsg = isset($errorMessages[$file['error']]) ? 
-            $errorMessages[$file['error']] : 
-            'Error desconocido al subir archivo';
-            
-        return ['success' => false, 'message' => $errorMsg];
-    }
-    
-    // Tipos MIME permitidos (CORREGIDOS)
-    $allowed = array(
-        "jpg" => "image/jpeg",    // Corregido: era "image/jpg"
-        "jpeg" => "image/jpeg", 
-        "gif" => "image/gif", 
-        "png" => "image/png"
-    );
-    
-    $filename = $file['name'];
-    $filetype = $file['type'];
-    $filesize = $file['size'];
-    $tmpName = $file['tmp_name'];
-    
-    // Log para debug
-    error_log("=== DEBUG IMAGEN ===");
-    error_log("Nombre: " . $filename);
-    error_log("Tipo MIME: " . $filetype);
-    error_log("Tamaño: " . $filesize);
-    error_log("Archivo temporal: " . $tmpName);
-    
-    // Verificar que hay archivo temporal
-    if (empty($tmpName) || !file_exists($tmpName)) {
-        return ['success' => false, 'message' => 'No se recibió el archivo correctamente'];
-    }
-    
-    // Verificar extensión del archivo
-    $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-    if (!array_key_exists($ext, $allowed)) {
-        return ['success' => false, 'message' => 'Formato de imagen no válido. Use: JPG, JPEG, PNG, GIF'];
-    }
-    
-    // Verificar tamaño (5MB máximo)
-    if ($filesize > 5 * 1024 * 1024) {
-        return ['success' => false, 'message' => 'La imagen es demasiado grande. Máximo: 5MB'];
-    }
-    
-    // Verificar tipo MIME (más flexible para móviles)
-    $allowedMimes = array_values($allowed);
-    if (!in_array($filetype, $allowedMimes)) {
-        // Intentar detectar tipo MIME real usando finfo
-        if (function_exists('finfo_open')) {
-            $finfo = finfo_open(FILEINFO_MIME_TYPE);
-            $detectedType = finfo_file($finfo, $tmpName);
-            finfo_close($finfo);
-            
-            error_log("Tipo detectado con finfo: " . $detectedType);
-            
-            if (in_array($detectedType, $allowedMimes)) {
-                $filetype = $detectedType; // Usar el tipo detectado
-            } else {
-                return ['success' => false, 'message' => 'Tipo de archivo no válido. Tipo detectado: ' . $detectedType];
-            }
-        } else {
-            return ['success' => false, 'message' => 'Tipo de imagen no válido. Recibido: ' . $filetype];
-        }
-    }
-    
-    // Validación adicional: verificar que es realmente una imagen
-    $imageInfo = @getimagesize($tmpName);
-    if ($imageInfo === false) {
-        return ['success' => false, 'message' => 'El archivo no es una imagen válida'];
-    }
-    
-    // Generar nombre único y mover archivo
-    $newName = 'img_' . time() . '_' . uniqid() . '.' . $ext;
-    $targetPath = 'uploads/trees/' . $newName;
-    
-    if (move_uploaded_file($tmpName, $targetPath)) {
-        error_log("Imagen guardada exitosamente en: " . $targetPath);
-        return ['success' => true, 'path' => $targetPath];
-    } else {
-        error_log("Error al mover archivo desde " . $tmpName . " hacia " . $targetPath);
-        return ['success' => false, 'message' => 'Error al guardar la imagen en el servidor'];
-    }
-}
 
 /**
  * Validar y procesar archivo PDF
@@ -1408,104 +1498,130 @@ $conn->close();
         // ===============================================
         
         // Preview de imagen
-       document.getElementById('foto').addEventListener('change', function(e) {
+       
+// Función específica para detectar y manejar problemas de móviles
+function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
+function getConnectionType() {
+    return navigator.connection ? navigator.connection.effectiveType : 'unknown';
+}
+
+// Event listener mejorado para archivos en móviles
+document.getElementById('foto').addEventListener('change', function(e) {
     const file = e.target.files[0];
     const preview = document.getElementById('filePreview');
     
-    console.log('=== DEBUG ARCHIVO CLIENTE ===');
-    console.log('Archivo seleccionado:', file);
+    console.log('=== DEBUG MÓVIL ARCHIVO ===');
+    console.log('Es móvil:', isMobileDevice());
+    console.log('Conexión:', getConnectionType());
+    console.log('Archivo:', file);
     
     if (file) {
-        console.log('Nombre:', file.name);
-        console.log('Tipo:', file.type);
-        console.log('Tamaño:', file.size);
-        console.log('Última modificación:', file.lastModified);
+        // Límites específicos para móviles
+        const maxSize = isMobileDevice() ? 5 * 1024 * 1024 : 8 * 1024 * 1024; // 5MB para móvil, 8MB para desktop
         
-        // Tipos permitidos más flexibles para móviles
+        if (file.size > maxSize) {
+            const maxSizeMB = Math.round(maxSize / 1024 / 1024);
+            showNotification(`Imagen demasiado grande para móviles. Máximo: ${maxSizeMB}MB`, 'error');
+            e.target.value = '';
+            preview.innerHTML = '';
+            return;
+        }
+        
+        // Tipos MIME más permisivos para móviles
         const allowedTypes = [
             'image/jpeg', 
-            'image/jpg',  // Aunque no es estándar, algunos dispositivos lo usan
+            'image/jpg',
             'image/png', 
             'image/gif',
-            'image/webp', // Formato común en móviles
-            ''            // Algunos móviles pueden no enviar tipo MIME
+            'image/webp',    // Común en Android
+            'image/heic',    // Común en iPhone
+            'image/heif',    // Formato iOS
+            ''               // Algunos móviles no envían tipo MIME
         ];
         
-        // Si no hay tipo MIME, intentar detectar por extensión
         let validType = false;
-        if (file.type && allowedTypes.includes(file.type)) {
+        if (allowedTypes.includes(file.type)) {
             validType = true;
-        } else if (!file.type) {
-            // Si no hay tipo MIME, verificar extensión
+        } else if (!file.type || file.type === '') {
+            // Si no hay tipo MIME, validar por extensión
             const ext = file.name.split('.').pop().toLowerCase();
-            if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
-                validType = true;
-                console.log('Tipo validado por extensión:', ext);
-            }
+            validType = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif'].includes(ext);
+            console.log('Validación por extensión:', ext, validType);
         }
         
-        if (!validType && file.type) {
-            showNotification('Tipo de archivo no reconocido: ' + file.type + '. Use JPG, PNG o GIF', 'error');
+        if (!validType) {
+            showNotification(`Formato no soportado: ${file.type}. Use JPG, PNG o GIF`, 'error');
             e.target.value = '';
             preview.innerHTML = '';
             return;
         }
         
-        const maxSize = 8 * 1024 * 1024; // Aumentado a 8MB para móviles
-        if (file.size > maxSize) {
-            showNotification('El archivo es demasiado grande. Máximo: 8MB', 'error');
-            e.target.value = '';
-            preview.innerHTML = '';
-            return;
-        }
-        
-        // Intentar cargar preview
+        // Preview optimizado para móviles
         const reader = new FileReader();
         reader.onload = function(event) {
             try {
-                preview.innerHTML = `
-                    <img src="${event.target.result}" alt="Vista previa" style="max-width: 200px; max-height: 150px;">
-                    <div class="file-info">
-                        <i class="fas fa-file-image"></i> ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)
-                        <br><small>Tipo: ${file.type || 'Detectado por extensión'}</small>
-                    </div>
-                `;
-                
-                document.querySelector('label[for="foto"]').innerHTML = `
-                    <i class="fas fa-check-circle"></i>
-                    Imagen seleccionada: ${file.name}
-                `;
-                
-                console.log('Preview cargado exitosamente');
+                const img = new Image();
+                img.onload = function() {
+                    // Crear canvas para redimensionar si es muy grande
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    // Redimensionar para preview si es necesario
+                    let { width, height } = img;
+                    const maxDimension = 300;
+                    
+                    if (width > maxDimension || height > maxDimension) {
+                        if (width > height) {
+                            height = (height * maxDimension) / width;
+                            width = maxDimension;
+                        } else {
+                            width = (width * maxDimension) / height;
+                            height = maxDimension;
+                        }
+                    }
+                    
+                    canvas.width = width;
+                    canvas.height = height;
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    preview.innerHTML = `
+                        <img src="${canvas.toDataURL('image/jpeg', 0.8)}" alt="Vista previa" style="max-width: 200px; max-height: 150px; border-radius: 4px;">
+                        <div class="file-info">
+                            <i class="fas fa-mobile-alt"></i> ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)
+                            <br><small>Optimizado para móvil - Tipo: ${file.type || 'Detectado por extensión'}</small>
+                        </div>
+                    `;
+                };
+                img.src = event.target.result;
                 
             } catch (error) {
-                console.error('Error al crear preview:', error);
+                console.error('Error creando preview:', error);
                 preview.innerHTML = `
                     <div class="file-info">
-                        <i class="fas fa-file-image"></i> ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)
-                        <br><small style="color: orange;">Preview no disponible, pero el archivo es válido</small>
+                        <i class="fas fa-mobile-alt"></i> ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)
+                        <br><small style="color: orange;">Preview no disponible en este dispositivo</small>
                     </div>
                 `;
             }
         };
         
         reader.onerror = function() {
-            console.error('Error al leer archivo');
             preview.innerHTML = `
                 <div class="file-info">
-                    <i class="fas fa-file-image"></i> ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)
-                    <br><small style="color: orange;">No se puede mostrar preview, pero el archivo es válido</small>
+                    <i class="fas fa-mobile-alt"></i> ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)
+                    <br><small>Archivo válido - Preview no disponible</small>
                 </div>
             `;
         };
         
         reader.readAsDataURL(file);
         
-    } else {
-        preview.innerHTML = '';
         document.querySelector('label[for="foto"]').innerHTML = `
-            <i class="fas fa-cloud-upload-alt"></i>
-            Seleccionar imagen del árbol
+            <i class="fas fa-check-circle"></i>
+            ${isMobileDevice() ? 'Foto móvil' : 'Imagen'} seleccionada: ${file.name}
         `;
     }
 });
@@ -1771,6 +1887,9 @@ $conn->close();
          */
         function submitForm() {
     console.log("=== INICIANDO ENVÍO DE FORMULARIO ===");
+    console.log("Dispositivo móvil:", isMobileDevice());
+    console.log("Navigator online:", navigator.onLine);
+    console.log("URL actual:", window.location.href);
     
     const form = document.getElementById('arbolForm');
     const formData = new FormData(form);
@@ -1798,8 +1917,11 @@ $conn->close();
         return;
     }
     
-    if (fotoFile.size > 8 * 1024 * 1024) {
-        showNotification('La imagen es demasiado grande (máx. 8MB)', 'error');
+    // Límite diferente para móviles
+    const maxSize = isMobileDevice() ? 5 * 1024 * 1024 : 8 * 1024 * 1024; // 5MB móvil, 8MB desktop
+    if (fotoFile.size > maxSize) {
+        const maxMB = Math.round(maxSize / 1024 / 1024);
+        showNotification(`La imagen es demasiado grande (máx. ${maxMB}MB${isMobileDevice() ? ' para móviles' : ''})`, 'error');
         return;
     }
     
@@ -1841,72 +1963,145 @@ $conn->close();
     formData.set('lng', finalLng);
     formData.set('lat', finalLat);
     
+    // Agregar información del dispositivo para debug en servidor
+    formData.set('is_mobile', isMobileDevice() ? '1' : '0');
+    formData.set('user_agent', navigator.userAgent.substring(0, 100));
+    
     // ===============================================
-    // DEBUG FORMDATA (solo para desarrollo)
+    // DEBUG FORMDATA
     // ===============================================
     
     console.log("=== DATOS FORMDATA ===");
+    let totalSize = 0;
     for (let [key, value] of formData.entries()) {
         if (value instanceof File) {
-            console.log(`${key}: [File] ${value.name} (${value.size} bytes, ${value.type})`);
+            totalSize += value.size;
+            console.log(`${key}: [File] ${value.name} (${value.size} bytes, ${value.type || 'sin tipo'})`);
         } else {
+            totalSize += new Blob([value]).size;
             console.log(`${key}: "${value}"`);
         }
     }
+    console.log("Tamaño total FormData:", (totalSize / 1024 / 1024).toFixed(2) + " MB");
 
     // ===============================================
-    // ENVÍO AJAX
+    // PREPARAR ENVÍO CON CONFIGURACIÓN MÓVIL
     // ===============================================
     
     const btn = document.getElementById('agregarArbolBtn');
     const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registrando árbol...';
+    btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${isMobileDevice() ? 'Subiendo desde móvil...' : 'Registrando árbol...'}`;
     btn.disabled = true;
+
+    // Timeout más largo para móviles (3 min vs 2 min)
+    const controller = new AbortController();
+    const timeoutMs = isMobileDevice() ? 180000 : 120000;
+    const timeoutId = setTimeout(() => {
+        controller.abort();
+        console.log('Timeout activado después de', timeoutMs, 'ms');
+    }, timeoutMs);
+
+    // ===============================================
+    // ENVÍO AJAX OPTIMIZADO PARA MÓVILES
+    // ===============================================
 
     fetch('administrador.php', {
         method: 'POST',
-        body: formData
+        body: formData,
+        signal: controller.signal,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-Mobile-Device': isMobileDevice() ? '1' : '0'
+        },
+        // Configuraciones adicionales para móviles
+        keepalive: false,  // No mantener conexión viva
+        cache: 'no-cache'  // No usar caché
     })
     .then(response => {
-        console.log('Estado respuesta:', response.status);
-        console.log('Respuesta OK:', response.ok);
+        clearTimeout(timeoutId);
+        
+        console.log('=== RESPUESTA DEL SERVIDOR ===');
+        console.log('Estado:', response.status);
+        console.log('StatusText:', response.statusText);
+        console.log('OK:', response.ok);
+        console.log('Tipo:', response.type);
+        console.log('URL:', response.url);
+        
+        // Verificar headers de respuesta
+        const contentType = response.headers.get('content-type');
+        console.log('Content-Type:', contentType);
         
         if (!response.ok) {
-            throw new Error(`Error HTTP: ${response.status}`);
+            // Errores específicos por código de estado
+            if (response.status === 413) {
+                throw new Error(`Archivo demasiado grande para el servidor${isMobileDevice() ? ' móvil' : ''} (413)`);
+            } else if (response.status === 502) {
+                throw new Error('Error del servidor - gateway (502)');
+            } else if (response.status === 504) {
+                throw new Error(`Timeout del servidor${isMobileDevice() ? ' - conexión móvil lenta' : ''} (504)`);
+            } else if (response.status === 0) {
+                throw new Error('Sin conexión al servidor');
+            } else if (response.status === 500) {
+                throw new Error('Error interno del servidor (500)');
+            } else {
+                throw new Error(`Error HTTP ${response.status}: ${response.statusText}`);
+            }
+        }
+        
+        // Verificar que la respuesta sea JSON
+        if (contentType && !contentType.includes('application/json')) {
+            console.warn('Respuesta no es JSON:', contentType);
         }
         
         return response.text();
     })
     .then(responseText => {
+        console.log('=== PROCESANDO RESPUESTA ===');
         console.log('Longitud respuesta:', responseText.length);
-        console.log('Respuesta cruda:', responseText);
+        console.log('Primeros 200 caracteres:', responseText.substring(0, 200));
         
+        // Limpiar respuesta
         const cleanResponseText = responseText.trim();
+        
+        // Si la respuesta está vacía
+        if (cleanResponseText === '') {
+            throw new Error('El servidor devolvió una respuesta vacía');
+        }
         
         let data;
         try {
             data = JSON.parse(cleanResponseText);
+            console.log('JSON parseado exitosamente:', data);
         } catch (e) {
             console.error('Error parsing JSON:', e);
-            console.error('Respuesta limpia:', cleanResponseText);
+            console.error('Respuesta completa:', cleanResponseText);
             
+            // Análisis detallado del error
             if (cleanResponseText.includes('<!DOCTYPE') || cleanResponseText.includes('<html')) {
-                throw new Error('El servidor devolvió HTML en lugar de JSON. Verifica los logs del servidor.');
-            } else if (cleanResponseText.includes('Fatal error') || cleanResponseText.includes('Parse error')) {
-                throw new Error('Error PHP: ' + cleanResponseText.substring(0, 200));
+                throw new Error('El servidor devolvió HTML en lugar de JSON (posible error 500)');
+            } else if (cleanResponseText.includes('Fatal error')) {
+                const errorMatch = cleanResponseText.match(/Fatal error:([^<\n]+)/);
+                const errorMsg = errorMatch ? errorMatch[1].trim() : 'Error PHP';
+                throw new Error('Error PHP: ' + errorMsg);
+            } else if (cleanResponseText.includes('Parse error')) {
+                throw new Error('Error de sintaxis PHP en el servidor');
+            } else if (cleanResponseText.includes('Warning') || cleanResponseText.includes('Notice')) {
+                throw new Error('Advertencias PHP interfirieron con la respuesta JSON');
+            } else if (cleanResponseText.startsWith('{') || cleanResponseText.startsWith('[')) {
+                throw new Error('JSON malformado: ' + e.message);
             } else {
-                throw new Error('Respuesta no es JSON válido: ' + cleanResponseText.substring(0, 100));
+                throw new Error('Respuesta inválida del servidor: ' + cleanResponseText.substring(0, 100));
             }
         }
         
-        console.log('Datos parseados:', data);
-        
-        if (data.success) {
-            // ===============================================
-            // ÉXITO - LIMPIAR FORMULARIO
-            // ===============================================
+        // Procesar respuesta exitosa
+        if (data && data.success) {
+            console.log('=== REGISTRO EXITOSO ===');
             
+            // Mostrar mensaje de éxito
             document.getElementById('successMessage').style.display = 'block';
+            
+            // Limpiar formulario
             form.reset();
             document.getElementById('filePreview').innerHTML = '';
             document.getElementById('pdfPreview').innerHTML = '';
@@ -1921,7 +2116,7 @@ $conn->close();
                 Seleccionar PDF del árbol (opcional)
             `;
             
-            // Limpiar mapa sin afectar su funcionamiento
+            // Limpiar mapa
             if (marker) {
                 marker.remove();
                 marker = null;
@@ -1934,26 +2129,52 @@ $conn->close();
             btn.innerHTML = originalText;
             btn.disabled = true;
             
-            showNotification('¡Árbol registrado exitosamente!', 'success');
+            showNotification(`¡Árbol registrado exitosamente${isMobileDevice() ? ' desde móvil' : ''}!`, 'success');
             
-            // Recargar página después de 2 segundos
+            // Recargar página después de 3 segundos (más tiempo para móviles)
             setTimeout(() => {
                 location.reload();
-            }, 2000);
+            }, isMobileDevice() ? 3000 : 2000);
+            
         } else {
-            showNotification(data.message || 'Error al registrar el árbol', 'error');
+            // Error reportado por el servidor
+            const errorMessage = (data && data.message) ? data.message : 'Error desconocido al registrar el árbol';
+            console.log('Error del servidor:', errorMessage);
+            showNotification(errorMessage, 'error');
             btn.innerHTML = originalText;
             btn.disabled = false;
         }
     })
     .catch(error => {
-        console.error('Error fetch:', error);
-        showNotification('Error al registrar: ' + error.message, 'error');
+        clearTimeout(timeoutId);
+        
+        console.error('=== ERROR EN CATCH ===');
+        console.error('Tipo de error:', error.name);
+        console.error('Mensaje:', error.message);
+        console.error('Stack:', error.stack);
+        
+        // Restaurar botón
         btn.innerHTML = originalText;
         btn.disabled = false;
+        
+        // Mensajes de error específicos
+        if (error.name === 'AbortError') {
+            showNotification(`Tiempo agotado. ${isMobileDevice() ? 'Verifique su conexión móvil e intente con una imagen más pequeña.' : 'El servidor tardó demasiado en responder.'}`, 'error');
+        } else if (error.message.includes('Failed to fetch')) {
+            if (!navigator.onLine) {
+                showNotification('Sin conexión a internet. Verifique su conexión.', 'error');
+            } else if (isMobileDevice()) {
+                showNotification('Error de conexión móvil. Intente:\n• Cambiar de WiFi a datos móviles (o viceversa)\n• Usar una imagen más pequeña\n• Intentar en unos minutos', 'error');
+            } else {
+                showNotification('Error de conexión. Verifique su conexión a internet e intente nuevamente.', 'error');
+            }
+        } else if (error.message.includes('NetworkError')) {
+            showNotification(`Error de red${isMobileDevice() ? ' móvil' : ''}. Intente nuevamente.`, 'error');
+        } else {
+            showNotification('Error: ' + error.message, 'error');
+        }
     });
 }
-
         // ===============================================
         // INICIALIZACIÓN
         // ===============================================
