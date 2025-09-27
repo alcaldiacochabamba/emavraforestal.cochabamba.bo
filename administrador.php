@@ -8,6 +8,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
+// Configurar límites de subida para móviles
+ini_set('upload_max_filesize', '10M');
+ini_set('post_max_size', '15M');
+ini_set('max_input_time', 300);
+ini_set('max_execution_time', 300);
+
+// Función para debug de configuración PHP
+function debugPhpConfig() {
+    error_log("=== CONFIGURACIÓN PHP ===");
+    error_log("upload_max_filesize: " . ini_get('upload_max_filesize'));
+    error_log("post_max_size: " . ini_get('post_max_size'));
+    error_log("max_file_uploads: " . ini_get('max_file_uploads'));
+    error_log("max_input_time: " . ini_get('max_input_time'));
+    error_log("max_execution_time: " . ini_get('max_execution_time'));
+    error_log("file_uploads: " . (ini_get('file_uploads') ? 'ON' : 'OFF'));
+}
+
+// Llamar función de debug si es necesario
+if (isset($_GET['debug_config'])) {
+    debugPhpConfig();
+}
 
 // Configurar zona horaria de Bolivia
 date_default_timezone_set('America/La_Paz');
@@ -64,16 +85,58 @@ function getBaseUrl() {
 /**
  * Validar y procesar archivo de imagen
  */
+/**
+ * Validar y procesar archivo de imagen (VERSIÓN CORREGIDA)
+ */
 function processImageFile($file) {
-    $allowed = array("jpg" => "image/jpg", "jpeg" => "image/jpeg", "gif" => "image/gif", "png" => "image/png");
+    // Verificar que el archivo fue subido correctamente
+    if (!isset($file) || $file['error'] !== UPLOAD_ERR_OK) {
+        $errorMessages = [
+            UPLOAD_ERR_INI_SIZE => 'El archivo excede el tamaño máximo permitido por el servidor',
+            UPLOAD_ERR_FORM_SIZE => 'El archivo excede el tamaño máximo del formulario',
+            UPLOAD_ERR_PARTIAL => 'El archivo se subió parcialmente',
+            UPLOAD_ERR_NO_FILE => 'No se seleccionó ningún archivo',
+            UPLOAD_ERR_NO_TMP_DIR => 'Falta el directorio temporal',
+            UPLOAD_ERR_CANT_WRITE => 'Error al escribir el archivo',
+            UPLOAD_ERR_EXTENSION => 'Una extensión de PHP detuvo la subida'
+        ];
+        
+        $errorMsg = isset($errorMessages[$file['error']]) ? 
+            $errorMessages[$file['error']] : 
+            'Error desconocido al subir archivo';
+            
+        return ['success' => false, 'message' => $errorMsg];
+    }
+    
+    // Tipos MIME permitidos (CORREGIDOS)
+    $allowed = array(
+        "jpg" => "image/jpeg",    // Corregido: era "image/jpg"
+        "jpeg" => "image/jpeg", 
+        "gif" => "image/gif", 
+        "png" => "image/png"
+    );
+    
     $filename = $file['name'];
     $filetype = $file['type'];
     $filesize = $file['size'];
+    $tmpName = $file['tmp_name'];
     
-    // Verificar extensión
+    // Log para debug
+    error_log("=== DEBUG IMAGEN ===");
+    error_log("Nombre: " . $filename);
+    error_log("Tipo MIME: " . $filetype);
+    error_log("Tamaño: " . $filesize);
+    error_log("Archivo temporal: " . $tmpName);
+    
+    // Verificar que hay archivo temporal
+    if (empty($tmpName) || !file_exists($tmpName)) {
+        return ['success' => false, 'message' => 'No se recibió el archivo correctamente'];
+    }
+    
+    // Verificar extensión del archivo
     $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
     if (!array_key_exists($ext, $allowed)) {
-        return ['success' => false, 'message' => 'Formato de imagen no válido (JPG, JPEG, PNG, GIF)'];
+        return ['success' => false, 'message' => 'Formato de imagen no válido. Use: JPG, JPEG, PNG, GIF'];
     }
     
     // Verificar tamaño (5MB máximo)
@@ -81,19 +144,43 @@ function processImageFile($file) {
         return ['success' => false, 'message' => 'La imagen es demasiado grande. Máximo: 5MB'];
     }
     
-    // Verificar tipo MIME
-    if (!in_array($filetype, $allowed)) {
-        return ['success' => false, 'message' => 'Problema al verificar el tipo de imagen'];
+    // Verificar tipo MIME (más flexible para móviles)
+    $allowedMimes = array_values($allowed);
+    if (!in_array($filetype, $allowedMimes)) {
+        // Intentar detectar tipo MIME real usando finfo
+        if (function_exists('finfo_open')) {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $detectedType = finfo_file($finfo, $tmpName);
+            finfo_close($finfo);
+            
+            error_log("Tipo detectado con finfo: " . $detectedType);
+            
+            if (in_array($detectedType, $allowedMimes)) {
+                $filetype = $detectedType; // Usar el tipo detectado
+            } else {
+                return ['success' => false, 'message' => 'Tipo de archivo no válido. Tipo detectado: ' . $detectedType];
+            }
+        } else {
+            return ['success' => false, 'message' => 'Tipo de imagen no válido. Recibido: ' . $filetype];
+        }
+    }
+    
+    // Validación adicional: verificar que es realmente una imagen
+    $imageInfo = @getimagesize($tmpName);
+    if ($imageInfo === false) {
+        return ['success' => false, 'message' => 'El archivo no es una imagen válida'];
     }
     
     // Generar nombre único y mover archivo
     $newName = 'img_' . time() . '_' . uniqid() . '.' . $ext;
     $targetPath = 'uploads/trees/' . $newName;
     
-    if (move_uploaded_file($file['tmp_name'], $targetPath)) {
+    if (move_uploaded_file($tmpName, $targetPath)) {
+        error_log("Imagen guardada exitosamente en: " . $targetPath);
         return ['success' => true, 'path' => $targetPath];
     } else {
-        return ['success' => false, 'message' => 'Error al guardar la imagen'];
+        error_log("Error al mover archivo desde " . $tmpName . " hacia " . $targetPath);
+        return ['success' => false, 'message' => 'Error al guardar la imagen en el servidor'];
     }
 }
 
@@ -1321,50 +1408,107 @@ $conn->close();
         // ===============================================
         
         // Preview de imagen
-        document.getElementById('foto').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            const preview = document.getElementById('filePreview');
-            
-            if (file) {
-                const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
-                if (!allowedTypes.includes(file.type)) {
-                    showNotification('Selecciona un archivo de imagen válido (JPG, PNG, GIF)', 'error');
-                    e.target.value = '';
-                    preview.innerHTML = '';
-                    return;
-                }
-                
-                const maxSize = 5 * 1024 * 1024;
-                if (file.size > maxSize) {
-                    showNotification('El archivo es demasiado grande. Máximo: 5MB', 'error');
-                    e.target.value = '';
-                    preview.innerHTML = '';
-                    return;
-                }
-                
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    preview.innerHTML = `
-                        <img src="${event.target.result}" alt="Vista previa">
-                        <div class="file-info">
-                            <i class="fas fa-file-image"></i> ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)
-                        </div>
-                    `;
-                };
-                reader.readAsDataURL(file);
+       document.getElementById('foto').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    const preview = document.getElementById('filePreview');
+    
+    console.log('=== DEBUG ARCHIVO CLIENTE ===');
+    console.log('Archivo seleccionado:', file);
+    
+    if (file) {
+        console.log('Nombre:', file.name);
+        console.log('Tipo:', file.type);
+        console.log('Tamaño:', file.size);
+        console.log('Última modificación:', file.lastModified);
+        
+        // Tipos permitidos más flexibles para móviles
+        const allowedTypes = [
+            'image/jpeg', 
+            'image/jpg',  // Aunque no es estándar, algunos dispositivos lo usan
+            'image/png', 
+            'image/gif',
+            'image/webp', // Formato común en móviles
+            ''            // Algunos móviles pueden no enviar tipo MIME
+        ];
+        
+        // Si no hay tipo MIME, intentar detectar por extensión
+        let validType = false;
+        if (file.type && allowedTypes.includes(file.type)) {
+            validType = true;
+        } else if (!file.type) {
+            // Si no hay tipo MIME, verificar extensión
+            const ext = file.name.split('.').pop().toLowerCase();
+            if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
+                validType = true;
+                console.log('Tipo validado por extensión:', ext);
+            }
+        }
+        
+        if (!validType && file.type) {
+            showNotification('Tipo de archivo no reconocido: ' + file.type + '. Use JPG, PNG o GIF', 'error');
+            e.target.value = '';
+            preview.innerHTML = '';
+            return;
+        }
+        
+        const maxSize = 8 * 1024 * 1024; // Aumentado a 8MB para móviles
+        if (file.size > maxSize) {
+            showNotification('El archivo es demasiado grande. Máximo: 8MB', 'error');
+            e.target.value = '';
+            preview.innerHTML = '';
+            return;
+        }
+        
+        // Intentar cargar preview
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            try {
+                preview.innerHTML = `
+                    <img src="${event.target.result}" alt="Vista previa" style="max-width: 200px; max-height: 150px;">
+                    <div class="file-info">
+                        <i class="fas fa-file-image"></i> ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)
+                        <br><small>Tipo: ${file.type || 'Detectado por extensión'}</small>
+                    </div>
+                `;
                 
                 document.querySelector('label[for="foto"]').innerHTML = `
                     <i class="fas fa-check-circle"></i>
                     Imagen seleccionada: ${file.name}
                 `;
-            } else {
-                preview.innerHTML = '';
-                document.querySelector('label[for="foto"]').innerHTML = `
-                    <i class="fas fa-cloud-upload-alt"></i>
-                    Seleccionar imagen del árbol
+                
+                console.log('Preview cargado exitosamente');
+                
+            } catch (error) {
+                console.error('Error al crear preview:', error);
+                preview.innerHTML = `
+                    <div class="file-info">
+                        <i class="fas fa-file-image"></i> ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)
+                        <br><small style="color: orange;">Preview no disponible, pero el archivo es válido</small>
+                    </div>
                 `;
             }
-        });
+        };
+        
+        reader.onerror = function() {
+            console.error('Error al leer archivo');
+            preview.innerHTML = `
+                <div class="file-info">
+                    <i class="fas fa-file-image"></i> ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)
+                    <br><small style="color: orange;">No se puede mostrar preview, pero el archivo es válido</small>
+                </div>
+            `;
+        };
+        
+        reader.readAsDataURL(file);
+        
+    } else {
+        preview.innerHTML = '';
+        document.querySelector('label[for="foto"]').innerHTML = `
+            <i class="fas fa-cloud-upload-alt"></i>
+            Seleccionar imagen del árbol
+        `;
+    }
+});
 
         // Preview de PDF
         document.getElementById('pdf').addEventListener('change', function(e) {
@@ -1626,156 +1770,189 @@ $conn->close();
          * Enviar formulario al servidor
          */
         function submitForm() {
-            console.log("=== INICIANDO ENVÍO DE FORMULARIO ===");
-            
-            const form = document.getElementById('arbolForm');
-            const formData = new FormData(form);
-            
-            // Debug FormData
-            console.log("=== DATOS A ENVIAR ===");
-            for (let [key, value] of formData.entries()) {
-                console.log(`${key}: "${value}"`);
-            }
-            
-            // ===============================================
-            // VALIDACIONES CLIENTE
-            // ===============================================
-            
-            const especie = form.querySelector('[name="especie"]').value.trim();
-            const codigo_arbol = form.querySelector('[name="codigo_arbol"]').value.trim();
-            
-            if (!especie) {
-                showNotification('El campo "Especie del Árbol" es obligatorio', 'error');
-                return;
-            }
-            
-            if (!codigo_arbol) {
-                showNotification('El código del árbol es obligatorio', 'error');
-                return;
-            }
-            
-            if (!/^[A-Za-z0-9\-_]+$/.test(codigo_arbol)) {
-                showNotification('El código solo puede contener letras, números, guiones (-) y guiones bajos (_)', 'error');
-                return;
-            }
-            
-            if (!document.getElementById('foto').files[0]) {
-                showNotification('Selecciona una imagen del árbol', 'error');
-                return;
-            }
-            
-            // Validar coordenadas
-            const finalLat = latInput && !isNaN(parseFloat(latInput.value)) ? parseFloat(latInput.value) : lat;
-            const finalLng = lngInput && !isNaN(parseFloat(lngInput.value)) ? parseFloat(lngInput.value) : lng;
+    console.log("=== INICIANDO ENVÍO DE FORMULARIO ===");
+    
+    const form = document.getElementById('arbolForm');
+    const formData = new FormData(form);
+    
+    // ===============================================
+    // VALIDACIONES DE ARCHIVO DE IMAGEN
+    // ===============================================
+    
+    const fotoInput = document.getElementById('foto');
+    const fotoFile = fotoInput.files[0];
+    
+    console.log('=== DEBUG VALIDACIÓN FOTO ===');
+    console.log('Input foto:', fotoInput);
+    console.log('Archivos en input:', fotoInput.files);
+    console.log('Primer archivo:', fotoFile);
+    
+    if (!fotoFile) {
+        showNotification('Debe seleccionar una imagen del árbol', 'error');
+        return;
+    }
+    
+    // Validación adicional del archivo
+    if (fotoFile.size === 0) {
+        showNotification('El archivo de imagen está vacío', 'error');
+        return;
+    }
+    
+    if (fotoFile.size > 8 * 1024 * 1024) {
+        showNotification('La imagen es demasiado grande (máx. 8MB)', 'error');
+        return;
+    }
+    
+    // ===============================================
+    // VALIDACIONES DE CAMPOS OBLIGATORIOS
+    // ===============================================
+    
+    const especie = form.querySelector('[name="especie"]').value.trim();
+    const codigo_arbol = form.querySelector('[name="codigo_arbol"]').value.trim();
+    
+    if (!especie) {
+        showNotification('El campo "Especie del Árbol" es obligatorio', 'error');
+        return;
+    }
+    
+    if (!codigo_arbol) {
+        showNotification('El código del árbol es obligatorio', 'error');
+        return;
+    }
+    
+    if (!/^[A-Za-z0-9\-_]+$/.test(codigo_arbol)) {
+        showNotification('El código solo puede contener letras, números, guiones (-) y guiones bajos (_)', 'error');
+        return;
+    }
+    
+    // ===============================================
+    // VALIDACIÓN DE COORDENADAS
+    // ===============================================
+    
+    const finalLat = latInput && !isNaN(parseFloat(latInput.value)) ? parseFloat(latInput.value) : lat;
+    const finalLng = lngInput && !isNaN(parseFloat(lngInput.value)) ? parseFloat(lngInput.value) : lng;
 
-            if (!finalLng || !finalLat || finalLng === 0 || finalLat === 0) {
-                showNotification('Selecciona o ingresa una ubicación válida', 'error');
-                return;
-            }
-            
-            // Agregar coordenadas finales
-            formData.set('lng', finalLng);
-            formData.set('lat', finalLat);
-
-            // ===============================================
-            // ENVÍO AJAX
-            // ===============================================
-            
-            const btn = document.getElementById('agregarArbolBtn');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registrando árbol...';
-            btn.disabled = true;
-
-            fetch('administrador.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => {
-                console.log('Estado respuesta:', response.status);
-                console.log('Respuesta OK:', response.ok);
-                
-                if (!response.ok) {
-                    throw new Error(`Error HTTP: ${response.status}`);
-                }
-                
-                return response.text();
-            })
-            .then(responseText => {
-                console.log('Longitud respuesta:', responseText.length);
-                console.log('Respuesta cruda:', responseText);
-                
-                const cleanResponseText = responseText.trim();
-                
-                let data;
-                try {
-                    data = JSON.parse(cleanResponseText);
-                } catch (e) {
-                    console.error('Error parsing JSON:', e);
-                    console.error('Respuesta limpia:', cleanResponseText);
-                    
-                    if (cleanResponseText.includes('<!DOCTYPE') || cleanResponseText.includes('<html')) {
-                        throw new Error('El servidor devolvió HTML en lugar de JSON. Verifica los logs del servidor.');
-                    } else if (cleanResponseText.includes('Fatal error') || cleanResponseText.includes('Parse error')) {
-                        throw new Error('Error PHP: ' + cleanResponseText.substring(0, 200));
-                    } else {
-                        throw new Error('Respuesta no es JSON válido: ' + cleanResponseText.substring(0, 100));
-                    }
-                }
-                
-                console.log('Datos parseados:', data);
-                
-                if (data.success) {
-                    // ===============================================
-                    // ÉXITO - LIMPIAR FORMULARIO
-                    // ===============================================
-                    
-                    document.getElementById('successMessage').style.display = 'block';
-                    form.reset();
-                    document.getElementById('filePreview').innerHTML = '';
-                    document.getElementById('pdfPreview').innerHTML = '';
-                    
-                    // Resetear labels de archivos
-                    document.querySelector('label[for="foto"]').innerHTML = `
-                        <i class="fas fa-cloud-upload-alt"></i>
-                        Seleccionar imagen del árbol
-                    `;
-                    document.querySelector('label[for="pdf"]').innerHTML = `
-                        <i class="fas fa-cloud-upload-alt"></i>
-                        Seleccionar PDF del árbol (opcional)
-                    `;
-                    
-                    // Limpiar mapa
-                    if (marker) {
-                        marker.remove();
-                        marker = null;
-                    }
-                    lng = null;
-                    lat = null;
-                    updateCoordinatesDisplay();
-                    
-                    // Resetear botón
-                    btn.innerHTML = originalText;
-                    btn.disabled = true;
-                    
-                    showNotification('¡Árbol registrado exitosamente!', 'success');
-                    
-                    // Recargar página después de 2 segundos
-                    setTimeout(() => {
-                        location.reload();
-                    }, 2000);
-                } else {
-                    showNotification(data.message || 'Error al registrar el árbol', 'error');
-                    btn.innerHTML = originalText;
-                    btn.disabled = false;
-                }
-            })
-            .catch(error => {
-                console.error('Error fetch:', error);
-                showNotification('Error al registrar: ' + error.message, 'error');
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            });
+    if (!finalLng || !finalLat || finalLng === 0 || finalLat === 0) {
+        showNotification('Selecciona o ingresa una ubicación válida', 'error');
+        return;
+    }
+    
+    // Agregar coordenadas finales al FormData
+    formData.set('lng', finalLng);
+    formData.set('lat', finalLat);
+    
+    // ===============================================
+    // DEBUG FORMDATA (solo para desarrollo)
+    // ===============================================
+    
+    console.log("=== DATOS FORMDATA ===");
+    for (let [key, value] of formData.entries()) {
+        if (value instanceof File) {
+            console.log(`${key}: [File] ${value.name} (${value.size} bytes, ${value.type})`);
+        } else {
+            console.log(`${key}: "${value}"`);
         }
+    }
+
+    // ===============================================
+    // ENVÍO AJAX
+    // ===============================================
+    
+    const btn = document.getElementById('agregarArbolBtn');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registrando árbol...';
+    btn.disabled = true;
+
+    fetch('administrador.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        console.log('Estado respuesta:', response.status);
+        console.log('Respuesta OK:', response.ok);
+        
+        if (!response.ok) {
+            throw new Error(`Error HTTP: ${response.status}`);
+        }
+        
+        return response.text();
+    })
+    .then(responseText => {
+        console.log('Longitud respuesta:', responseText.length);
+        console.log('Respuesta cruda:', responseText);
+        
+        const cleanResponseText = responseText.trim();
+        
+        let data;
+        try {
+            data = JSON.parse(cleanResponseText);
+        } catch (e) {
+            console.error('Error parsing JSON:', e);
+            console.error('Respuesta limpia:', cleanResponseText);
+            
+            if (cleanResponseText.includes('<!DOCTYPE') || cleanResponseText.includes('<html')) {
+                throw new Error('El servidor devolvió HTML en lugar de JSON. Verifica los logs del servidor.');
+            } else if (cleanResponseText.includes('Fatal error') || cleanResponseText.includes('Parse error')) {
+                throw new Error('Error PHP: ' + cleanResponseText.substring(0, 200));
+            } else {
+                throw new Error('Respuesta no es JSON válido: ' + cleanResponseText.substring(0, 100));
+            }
+        }
+        
+        console.log('Datos parseados:', data);
+        
+        if (data.success) {
+            // ===============================================
+            // ÉXITO - LIMPIAR FORMULARIO
+            // ===============================================
+            
+            document.getElementById('successMessage').style.display = 'block';
+            form.reset();
+            document.getElementById('filePreview').innerHTML = '';
+            document.getElementById('pdfPreview').innerHTML = '';
+            
+            // Resetear labels de archivos
+            document.querySelector('label[for="foto"]').innerHTML = `
+                <i class="fas fa-cloud-upload-alt"></i>
+                Seleccionar imagen del árbol
+            `;
+            document.querySelector('label[for="pdf"]').innerHTML = `
+                <i class="fas fa-cloud-upload-alt"></i>
+                Seleccionar PDF del árbol (opcional)
+            `;
+            
+            // Limpiar mapa sin afectar su funcionamiento
+            if (marker) {
+                marker.remove();
+                marker = null;
+            }
+            lng = null;
+            lat = null;
+            updateCoordinatesDisplay();
+            
+            // Resetear botón
+            btn.innerHTML = originalText;
+            btn.disabled = true;
+            
+            showNotification('¡Árbol registrado exitosamente!', 'success');
+            
+            // Recargar página después de 2 segundos
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        } else {
+            showNotification(data.message || 'Error al registrar el árbol', 'error');
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error fetch:', error);
+        showNotification('Error al registrar: ' + error.message, 'error');
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    });
+}
 
         // ===============================================
         // INICIALIZACIÓN
