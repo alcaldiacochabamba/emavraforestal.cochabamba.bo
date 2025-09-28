@@ -321,14 +321,14 @@ $conn->close();
 
     #map {
       width: calc(90% - 3rem);
-      height: 620px;
+      height: 650px;
       border-radius: 15px;
       margin: 0 auto;
     }
 
     .map-legend {
   position: absolute;
-  bottom: 700px;/* Anclado a 50px de la parte superior del contenedor del mapa */
+  bottom: 750px;/* Anclado a 50px de la parte superior del contenedor del mapa */
   right: 900px;/* Anclado a 50px de la parte derecha del contenedor del mapa */
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
@@ -672,8 +672,8 @@ $conn->close();
 
     /* Opcional: Centra el mapa si lo deseas en móviles */
     #map {
-      width: 100%;
-      height: 600px;
+      width: 90%;
+      height: 650px;
     }
     }
 
@@ -1047,7 +1047,7 @@ $conn->close();
           map.flyTo({
             center: [lng, lat],
             zoom: 19,
-            pitch: 30,
+            pitch: 0,
             bearing: 0,
             essential: true,
             duration: 800

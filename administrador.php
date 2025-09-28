@@ -1091,6 +1091,7 @@ $conn->close();
 
             .nav {
                 padding: 0 1rem;
+                
             }
 
             .nav-links {
@@ -2181,6 +2182,186 @@ document.getElementById('foto').addEventListener('change', function(e) {
         }
     });
 }
+
+/**
+ * Comprimir imagen automáticamente para móviles
+ */
+function compressImageForMobile(file, options = {}) {
+    return new Promise((resolve, reject) => {
+        console.log('=== INICIANDO COMPRESIÓN MÓVIL ===');
+        console.log('Archivo original:', file.name, (file.size / 1024 / 1024).toFixed(2) + 'MB');
+        
+        const isMobile = isMobileDevice();
+        
+        // Configuración por defecto optimizada para móviles
+        const config = {
+            maxWidth: isMobile ? 1200 : 1920,        
+            maxHeight: isMobile ? 1200 : 1920,
+            quality: isMobile ? 0.6 : 0.8,           
+            maxSizeMB: isMobile ? 1.8 : 3.0,         
+            outputFormat: 'image/jpeg',               
+            ...options
+        };
+        
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        
+        img.onload = function() {
+            try {
+                console.log('Imagen cargada:', img.width + 'x' + img.height);
+                
+                // Calcular nuevas dimensiones manteniendo proporción
+                let { width, height } = img;
+                const aspectRatio = width / height;
+                
+                // Redimensionar si excede los límites
+                if (width > config.maxWidth) {
+                    width = config.maxWidth;
+                    height = width / aspectRatio;
+                }
+                
+                if (height > config.maxHeight) {
+                    height = config.maxHeight;
+                    width = height * aspectRatio;
+                }
+                
+                console.log('Nuevas dimensiones:', Math.round(width) + 'x' + Math.round(height));
+                
+                // Configurar canvas
+                canvas.width = width;
+                canvas.height = height;
+                
+                // Para imágenes JPEG, usar fondo blanco
+                if (config.outputFormat === 'image/jpeg') {
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.fillRect(0, 0, width, height);
+                }
+                
+                // Dibujar imagen redimensionada con suavizado
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                // Comprimir iterativamente hasta alcanzar el tamaño objetivo
+                compressIteratively(canvas, config, file.name)
+                    .then(resolve)
+                    .catch(reject);
+                    
+            } catch (error) {
+                console.error('Error procesando imagen:', error);
+                reject(new Error('Error al procesar la imagen: ' + error.message));
+            }
+        };
+        
+        img.onerror = function() {
+            reject(new Error('No se pudo cargar la imagen'));
+        };
+        
+        // Crear URL para la imagen
+        img.src = URL.createObjectURL(file);
+    });
+}
+
+/**
+ * Comprimir iterativamente hasta alcanzar el tamaño objetivo
+ */
+function compressIteratively(canvas, config, originalName) {
+    return new Promise((resolve, reject) => {
+        let quality = config.quality;
+        let attempt = 0;
+        const maxAttempts = 8;
+        const targetSizeBytes = config.maxSizeMB * 1024 * 1024;
+        
+        function tryCompress() {
+            attempt++;
+            console.log(`Intento de compresión ${attempt}/${maxAttempts}, calidad: ${(quality * 100).toFixed(0)}%`);
+            
+            canvas.toBlob(function(blob) {
+                if (!blob) {
+                    reject(new Error('Error al generar imagen comprimida'));
+                    return;
+                }
+                
+                console.log('Tamaño generado:', (blob.size / 1024 / 1024).toFixed(2) + 'MB');
+                
+                // Si el tamaño es aceptable o ya hicimos muchos intentos
+                if (blob.size <= targetSizeBytes || attempt >= maxAttempts || quality <= 0.1) {
+                    console.log('=== COMPRESIÓN COMPLETADA ===');
+                    console.log('Tamaño final:', (blob.size / 1024 / 1024).toFixed(2) + 'MB');
+                    
+                    // Crear nombre para archivo comprimido
+                    const compressedName = originalName.includes('compressed_mobile_') ? 
+                        originalName : 
+                        'compressed_mobile_' + originalName.replace(/\.[^/.]+$/, '.jpg');
+                    
+                    // Convertir blob a File
+                    const compressedFile = new File(
+                        [blob], 
+                        compressedName, 
+                        { 
+                            type: config.outputFormat,
+                            lastModified: Date.now()
+                        }
+                    );
+                    
+                    resolve(compressedFile);
+                } else {
+                    // Reducir calidad y volver a intentar
+                    quality = Math.max(0.1, quality - 0.1);
+                    setTimeout(tryCompress, 100);
+                }
+            }, config.outputFormat, quality);
+        }
+        
+        tryCompress();
+    });
+}
+
+/**
+ * Mostrar preview de imagen comprimida
+ */
+function showCompressedPreview(originalFile, compressedFile, previewElement) {
+    const originalSizeMB = (originalFile.size / 1024 / 1024).toFixed(2);
+    const compressedSizeMB = (compressedFile.size / 1024 / 1024).toFixed(2);
+    const reductionPercent = (((originalFile.size - compressedFile.size) / originalFile.size) * 100).toFixed(1);
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        previewElement.innerHTML = `
+            <div style="text-align: center;">
+                <img src="${e.target.result}" alt="Vista previa comprimida" 
+                     style="max-width: 200px; max-height: 150px; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                
+                <div class="file-info" style="margin-top: 10px; padding: 10px; background: #e8f5e8; border-radius: 4px;">
+                    <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 8px;">
+                        <i class="fas fa-mobile-alt" style="color: #28a745; margin-right: 5px;"></i>
+                        <strong>Imagen Optimizada para Móvil</strong>
+                    </div>
+                    
+                    <div style="font-size: 0.9em; color: #495057;">
+                        <div style="margin-bottom: 4px;">
+                            <span style="color: #dc3545;">Original:</span> ${originalSizeMB} MB
+                        </div>
+                        <div style="margin-bottom: 4px;">
+                            <span style="color: #28a745;">Comprimida:</span> ${compressedSizeMB} MB
+                        </div>
+                        <div style="font-weight: bold; color: #28a745;">
+                            <i class="fas fa-arrow-down"></i> Reducción: ${reductionPercent}%
+                        </div>
+                    </div>
+                    
+                    ${compressedFile.size > 2 * 1024 * 1024 ? 
+                        '<div style="color: #856404; font-size: 0.8em; margin-top: 5px;"><i class="fas fa-exclamation-triangle"></i> Aún puede ser grande para conexiones lentas</div>' : 
+                        '<div style="color: #155724; font-size: 0.8em; margin-top: 5px;"><i class="fas fa-check-circle"></i> Tamaño optimizado para móviles</div>'
+                    }
+                </div>
+            </div>
+        `;
+    };
+    reader.readAsDataURL(compressedFile);
+}
+
         // ===============================================
         // INICIALIZACIÓN
         // ===============================================
@@ -2191,6 +2372,140 @@ document.getElementById('foto').addEventListener('change', function(e) {
             // Inicializar referencias a inputs de coordenadas
             latInput = document.getElementById('latInput');
             lngInput = document.getElementById('lngInput');
+
+            const fotoInput = document.getElementById('foto');
+    const preview = document.getElementById('filePreview');
+    
+    // Remover event listeners existentes clonando el elemento
+    const newFotoInput = fotoInput.cloneNode(true);
+    fotoInput.parentNode.replaceChild(newFotoInput, fotoInput);
+
+    newFotoInput.addEventListener('change', async function(e) {
+        const file = e.target.files[0];
+        
+        console.log('=== NUEVO ARCHIVO SELECCIONADO ===');
+        console.log('Es móvil:', isMobileDevice());
+        console.log('Archivo:', file);
+        
+        if (!file) {
+            preview.innerHTML = '';
+            document.querySelector('label[for="foto"]').innerHTML = `
+                <i class="fas fa-cloud-upload-alt"></i>
+                Seleccionar imagen del árbol
+            `;
+            return;
+        }
+
+        // Mostrar estado de procesamiento
+        preview.innerHTML = `
+            <div style="text-align: center; padding: 20px;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 2em; color: #007bff; margin-bottom: 10px;"></i>
+                <div style="color: #495057;">
+                    <strong>Procesando imagen${isMobileDevice() ? ' móvil' : ''}...</strong>
+                    <br><small>Optimizando tamaño y calidad</small>
+                </div>
+            </div>
+        `;
+        
+        document.querySelector('label[for="foto"]').innerHTML = `
+            <i class="fas fa-spinner fa-spin"></i>
+            Procesando imagen...
+        `;
+
+        try {
+            // Verificación básica del archivo
+            if (!file.type.startsWith('image/')) {
+                throw new Error('El archivo seleccionado no es una imagen válida');
+            }
+            
+            const originalSizeMB = file.size / 1024 / 1024;
+            console.log('Tamaño original:', originalSizeMB.toFixed(2) + 'MB');
+            
+            // Determinar si necesita compresión
+            const needsCompression = isMobileDevice() ? 
+                originalSizeMB > 1.5 :  // Comprimir si > 1.5MB en móviles
+                originalSizeMB > 3.0;   // Comprimir si > 3MB en desktop
+                
+            let finalFile = file;
+            
+            if (needsCompression) {
+                console.log('Aplicando compresión...');
+                finalFile = await compressImageForMobile(file, {
+                    maxSizeMB: isMobileDevice() ? 1.8 : 2.5
+                });
+                
+                // Mostrar preview de imagen comprimida
+                showCompressedPreview(file, finalFile, preview);
+                
+                // Actualizar label
+                document.querySelector('label[for="foto"]').innerHTML = `
+                    <i class="fas fa-check-circle" style="color: #28a745;"></i>
+                    Imagen optimizada: ${(finalFile.size / 1024 / 1024).toFixed(1)}MB
+                `;
+                
+            } else {
+                console.log('No necesita compresión');
+                
+                // Mostrar preview normal
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.innerHTML = `
+                        <div style="text-align: center;">
+                            <img src="${e.target.result}" alt="Vista previa" 
+                                 style="max-width: 200px; max-height: 150px; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                            <div class="file-info" style="margin-top: 10px;">
+                                <i class="fas fa-check-circle" style="color: #28a745;"></i>
+                                ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)
+                                <br><small style="color: #28a745;">Tamaño adecuado - Sin compresión necesaria</small>
+                            </div>
+                        </div>
+                    `;
+                };
+                reader.readAsDataURL(file);
+                
+                // Actualizar label
+                document.querySelector('label[for="foto"]').innerHTML = `
+                    <i class="fas fa-check-circle" style="color: #28a745;"></i>
+                    Imagen seleccionada: ${file.name}
+                `;
+            }
+            
+            // IMPORTANTE: Reemplazar el archivo en el input con el archivo final
+            const dt = new DataTransfer();
+            dt.items.add(finalFile);
+            e.target.files = dt.files;
+            
+            console.log('Procesamiento completado. Archivo final:', (finalFile.size / 1024 / 1024).toFixed(2) + 'MB');
+            
+        } catch (error) {
+            console.error('Error procesando imagen:', error);
+            
+            preview.innerHTML = `
+                <div style="text-align: center; color: #dc3545; padding: 15px;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 1.5em; margin-bottom: 10px;"></i>
+                    <div><strong>Error al procesar imagen</strong></div>
+                    <div style="font-size: 0.9em; margin-top: 5px;">${error.message}</div>
+                    <div style="font-size: 0.8em; margin-top: 10px; color: #6c757d;">
+                        ${isMobileDevice() ? 
+                            'Intente con una imagen más pequeña o de menor resolución' : 
+                            'Seleccione una imagen válida'
+                        }
+                    </div>
+                </div>
+            `;
+            
+            document.querySelector('label[for="foto"]').innerHTML = `
+                <i class="fas fa-exclamation-triangle" style="color: #dc3545;"></i>
+                Error - Seleccionar otra imagen
+            `;
+            
+            // Limpiar input
+            e.target.value = '';
+        }
+    });
+    
+    console.log('=== COMPRESOR DE IMÁGENES MÓVILES ACTIVADO ===');
+    console.log('Event listener reemplazado exitosamente');
 
             // Event listeners para inputs de coordenadas
             if (latInput) {
