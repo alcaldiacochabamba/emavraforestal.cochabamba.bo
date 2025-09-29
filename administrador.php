@@ -1137,7 +1137,7 @@ $conn->close();
         <div class="admin-header">
             <h1 class="admin-title">Panel de Administración</h1>
             <p class="admin-subtitle">
-                Registra y gestiona los árboles de la Zona Norte de Cochabamba. 
+                Registra y gestiona los árboles de Cochabamba. 
                 Cada árbol registrado contribuye a construir un futuro más verde y sostenible.
             </p>
         </div>
@@ -1704,7 +1704,8 @@ document.getElementById('foto').addEventListener('change', function(e) {
                     .addTo(map);
 
                 const popup = new mapboxgl.Popup({
-                        offset: 25
+                        offset: 25,
+                        anchor: "left"
                     })
                     .setHTML(`
                     <div style="max-height: 250px; overflow-y: auto; padding-right: 5px;">

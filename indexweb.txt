@@ -306,8 +306,6 @@ $conn->close();
     .map-section {
       padding: 50px 0;
       background: white;
-      
-      
     }
 
     .map-container {
@@ -326,8 +324,6 @@ $conn->close();
       height: 650px;
       border-radius: 15px;
       margin: 0 auto;
-      
-
     }
 
     .map-legend {
@@ -371,7 +367,6 @@ $conn->close();
     .legend-icon.native { background: #2ed573; border-color: #2ed573; }
     .legend-icon.dangerous { background: #ffa502; border-color: #ffa502; }
 
-    
     /* Honor Wall */
     .honor-wall {
       padding: 50px 0;
@@ -517,7 +512,6 @@ $conn->close();
       border-radius: 50%;
       cursor: pointer;
       transition: transform 0.2s ease;
-      
     }
 
     .tree-marker:hover {
@@ -892,14 +886,14 @@ $conn->close();
         <div class="footer-section">
           <h3>Contacto</h3>
           <p><i class="fas fa-envelope"></i> info@emavra.com</p>
-          <p><i class="fas fa-phone"></i> +591 4 123-4567</p>
+          <p><i class="fas fa-phone"></i> +591</p>
           <p><i class="fas fa-map-marker-alt"></i> Cochabamba, Bolivia</p>
         </div>
 
         <div class="footer-section">
           <h3>Enlaces Útiles</h3>
           <p><a href="https://www.lostiempos.com/sites/default/files/ayma2021guiadeselecciondeespeciesparaelarboladourbanodecochabambaparacompartir_1_0.pdf" style="color: #ccc;">Información Legal</a></p>
-          
+          <p><a href="administrador.php" style="color: #ccc;">Registro de Arbol</a></p>
         </div>
 
         <div class="footer-section">
@@ -1023,12 +1017,10 @@ $conn->close();
 
         // Create popup
         const popup = new mapboxgl.Popup({
-          offset: 12,
-          anchor: "left",
+          offset: [0, -250],
           closeButton: true,
           closeOnClick: false,
-          maxWidth: '350px'
-          
+          maxWidth: '300px'
         }).setHTML(popupContent);
 
         // Create marker
@@ -1041,7 +1033,7 @@ $conn->close();
         el.addEventListener('click', () => {
           // Fly to marker with smooth animation
           map.flyTo({
-            center: [lng + 0.0002 , lat],
+            center: [lng, lat],
             zoom: 19,
             pitch: 0,
             bearing: 0,
