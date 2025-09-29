@@ -1103,7 +1103,7 @@ map.on('load', function() {
       if (mapElement) {
         mapElement.scrollIntoView({ 
           behavior: 'auto', 
-          block: 'start' 
+          block: 'end' 
         });
       }
     }, 300);
