@@ -381,6 +381,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $otb = trim($_POST['otb'] ?? '');
         $nombre_area_verde = trim($_POST['nombre_area_verde'] ?? '');
         $inspector = trim($_POST['inspector'] ?? '');
+        $estado_fitosanitario = trim($_POST['estado_fitosanitario'] ?? '');
         
         // ===============================================
         // VALIDACIONES DE CAMPOS OBLIGATORIOS
@@ -497,28 +498,28 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         error_log("Insertando árbol en BD con código: " . $codigo_arbol);
         
         $stmt = $conn->prepare("INSERT INTO arboles (
-            especie, nombre_comun, edad, estado, fotoUrl, altura, diametroTronco, 
-            diametro_copa, codigo_arbol, latitud, longitud, coordenadas,
-            propiedad, otb, nombre_area_verde, inspector, pdfUrl, 
-            fecha_registro, hora_registro
-        ) VALUES (
-            ?, ?, ?, ?, ?, ?, ?, 
-            ?, ?, ?, ?, ST_GeomFromText(?),
-            ?, ?, ?, ?, ?, 
-            ?, ?
-        )");
+    especie, nombre_comun, edad, estado, fotoUrl, altura, diametroTronco, 
+    diametro_copa, codigo_arbol, latitud, longitud, coordenadas,
+    propiedad, otb, nombre_area_verde, inspector, estado_fitosanitario, pdfUrl, 
+    fecha_registro, hora_registro
+) VALUES (
+    ?, ?, ?, ?, ?, ?, ?, 
+    ?, ?, ?, ?, ST_GeomFromText(?),
+    ?, ?, ?, ?, ?, ?, 
+    ?, ?
+)");
         
         if (!$stmt) {
             echo json_encode(['success' => false, 'message' => 'Error al preparar consulta: ' . $conn->error]);
             exit;
         }
         
-        $stmt->bind_param("ssissddssddssssssss", 
-            $especie, $nombre_comun, $edad, $estado, $fotoUrl, $altura, $diametroTronco, 
-            $diametro_copa, $codigo_arbol, $latitud, $longitud, $coordenadas,
-            $propiedad, $otb, $nombre_area_verde, $inspector, $pdfUrl, 
-            $fecha_registro, $hora_registro
-        );
+        $stmt->bind_param("ssissddssddsssssssss", 
+    $especie, $nombre_comun, $edad, $estado, $fotoUrl, $altura, $diametroTronco, 
+    $diametro_copa, $codigo_arbol, $latitud, $longitud, $coordenadas,
+    $propiedad, $otb, $nombre_area_verde, $inspector, $estado_fitosanitario, $pdfUrl, 
+    $fecha_registro, $hora_registro
+);
         
         if (!$stmt->execute()) {
             echo json_encode(['success' => false, 'message' => 'Error al guardar: ' . $stmt->error]);
@@ -1240,6 +1241,22 @@ $conn->close();
                                 <input type="number" step="0.000001" name="lng" id="lngInput" class="form-input" placeholder="Ej: -66.156977" />
                             </div>
                         </div>
+                        <!-- NUEVO CAMPO: Estado Fitosanitario -->
+    <div class="form-group">
+        <label class="form-label">
+            <i class="fas fa-heartbeat"></i> Estado Fitosanitario
+        </label>
+        <textarea 
+            name="estado_fitosanitario" 
+            class="form-input" 
+            rows="6" 
+            placeholder="Ejemplo: La especie forestal presenta una leve inclinación de 5 grados en el lado Sud, debido a la estructura de sus ramas altas sobre la copa superior. Asimismo tiene presencia de insectos que debilitan la corteza del tronco. Como EMAVRA se viene realizando la aplicación de Fertilizantes para la mejora del estado del Árbol."
+            style="resize: vertical; font-family: inherit; line-height: 1.5;"
+        ></textarea>
+        <small style="color: #6c757d; font-size: 0.85rem; display: block; margin-top: 0.5rem;">
+            <i class="fas fa-info-circle"></i> Incluya inclinaciones, plagas, enfermedades, tratamientos aplicados y observaciones sobre la salud del árbol.
+        </small>
+    </div>
 
                         <div class="form-group">
                             <label class="form-label">

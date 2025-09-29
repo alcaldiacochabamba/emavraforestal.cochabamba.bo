@@ -5,7 +5,7 @@ if ($conn->connect_error) {
 }
 
 // Consulta completa con todos los campos y funciones SQL apropiadas
-$sql = "SELECT id, especie, nombre_comun, edad, estado, fotoUrl, altura, diametroTronco, diametro_copa, codigo_arbol, ST_AsText(coordenadas) as coordenadas, latitud, longitud, propiedad, otb, nombre_area_verde, inspector, pdfUrl, qrUrl, DATE_FORMAT(fecha_registro, '%d/%m/%y') as fecha_formato, hora_registro FROM arboles";
+$sql = "SELECT id, especie, nombre_comun, edad, estado, fotoUrl, altura, diametroTronco, diametro_copa, codigo_arbol, ST_AsText(coordenadas) as coordenadas, latitud, longitud, propiedad, otb, nombre_area_verde, inspector, estado_fitosanitario, pdfUrl, qrUrl, DATE_FORMAT(fecha_registro, '%d/%m/%y') as fecha_formato, hora_registro FROM arboles";
 
 $result = $conn->query($sql);
 $arboles = [];
@@ -718,6 +718,163 @@ $conn->close();
   vertical-align: middle; /* lo alinea con el menú */
 }
 
+/* Modal del Estado Fitosanitario */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(5px);
+  z-index: 10000;
+  animation: fadeIn 0.3s ease;
+}
+
+.modal-overlay.active {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+}
+
+.modal-fitosanitario {
+  background: white;
+  border-radius: 20px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.4s ease;
+  position: relative;
+}
+
+.modal-header {
+  background: linear-gradient(135deg, #482e83, #685ca8);
+  color: white;
+  padding: 1.5rem 2rem;
+  border-radius: 20px 20px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.modal-header i {
+  font-size: 2rem;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 500;
+}
+
+.modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.modal-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: rotate(90deg);
+}
+
+.modal-body {
+  padding: 2rem;
+}
+
+.fitosanitario-content {
+  background: #f8f9fa;
+  border-left: 4px solid #3ebeab;
+  padding: 1.5rem;
+  border-radius: 8px;
+  line-height: 1.8;
+  color: #000000ff;
+  font-size: 1rem;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.fitosanitario-empty {
+  text-align: center;
+  padding: 2rem;
+  color: #000000ff;
+}
+
+.fitosanitario-empty i {
+  font-size: 3rem;
+  color: #000000ff;
+  margin-bottom: 1rem;
+}
+
+.btn-fitosanitario {
+  background: linear-gradient(135deg, #482e83, #503d7dff);
+  color: white;
+  padding: 0.6rem 1.5rem;
+  border-radius: 30px;
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: none;
+  cursor: pointer;
+  margin-top: 0.5rem;
+}
+
+.btn-fitosanitario:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(86, 61, 174, 0.3);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .modal-fitosanitario {
+    max-width: 95%;
+    max-height: 90vh;
+  }
+  
+  .modal-header {
+    padding: 1.2rem 1.5rem;
+  }
+  
+  .modal-body {
+    padding: 1.5rem;
+  }
+}
     
   </style>
 </head>
@@ -945,7 +1102,21 @@ $conn->close();
       </div>
     </div>
   </footer>
-
+<!-- Modal del Estado Fitosanitario -->
+<div id="modalFitosanitario" class="modal-overlay">
+  <div class="modal-fitosanitario">
+    <div class="modal-header">
+      <i class="fas fa-heartbeat"></i>
+      <h3>Estado Fitosanitario</h3>
+      <button class="modal-close" onclick="cerrarModalFitosanitario()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div id="fitosanitarioContent"></div>
+    </div>
+  </div>
+</div>
   <script>
     
     // Mapbox configuration
@@ -1038,6 +1209,14 @@ map.on('load', function() {
         <strong>Estado:</strong> ${arbol.estado}
       </div>
       
+      ${arbol.estado_fitosanitario ? `
+    <div class="popup-info" style="display: block; text-align: center; margin-top: 0.5rem;">
+      <button class="btn-fitosanitario" onclick="abrirModalFitosanitario(${arbol.id})">
+        <i class="fas fa-stethoscope"></i> Ver Estado Fitosanitario
+      </button>
+    </div>
+  ` : ''}
+
     ${arbol.pdfUrl ? `
       <div class="popup-info pdf-container">
         <a href="${arbol.pdfUrl}" target="_blank" class="pdf-button">
@@ -1204,6 +1383,58 @@ document.querySelectorAll('.feature-card, .honor-card').forEach(el => {
   el.style.transform = 'translateY(30px)';
   el.style.transition = 'all 0.6s ease';
   observer.observe(el);
+});
+
+// Función para abrir el modal
+function abrirModalFitosanitario(treeId) {
+  const arbol = arboles.find(a => a.id == treeId);
+  
+  if (!arbol) {
+    console.error('Árbol no encontrado');
+    return;
+  }
+  
+  const modal = document.getElementById('modalFitosanitario');
+  const content = document.getElementById('fitosanitarioContent');
+  
+  if (arbol.estado_fitosanitario && arbol.estado_fitosanitario.trim() !== '') {
+    content.innerHTML = `
+      <div class="fitosanitario-content">
+        ${arbol.estado_fitosanitario}
+      </div>
+    `;
+  } else {
+    content.innerHTML = `
+      <div class="fitosanitario-empty">
+        <i class="fas fa-leaf"></i>
+        <p>No hay información fitosanitaria registrada para este árbol.</p>
+      </div>
+    `;
+  }
+  
+  modal.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+// Función para cerrar el modal
+function cerrarModalFitosanitario() {
+  const modal = document.getElementById('modalFitosanitario');
+  modal.classList.remove('active');
+  document.body.style.overflow = 'auto';
+}
+
+// Cerrar modal al hacer clic fuera de él
+document.getElementById('modalFitosanitario').addEventListener('click', function(e) {
+  if (e.target === this) {
+    cerrarModalFitosanitario();
+  }
+});
+
+// Cerrar modal con tecla Escape
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    cerrarModalFitosanitario();
+  }
 });
   </script>
 </body>
