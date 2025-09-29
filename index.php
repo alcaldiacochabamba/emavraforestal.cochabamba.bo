@@ -125,7 +125,32 @@ $conn->close();
       transform: translateY(-2px);
       box-shadow: 0 5px 15px rgba(45, 80, 22, 0.3);
     }
+.hero-image-circle {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin: 0 auto 2.5rem;
+  border: 5px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    inset 0 0 20px rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
 
+.hero-image-circle:hover {
+  transform: scale(1.08) rotate(5deg);
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.15);
+}
+
+.hero-image-circle img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
     /* Hero Section */
     .hero {
       background: linear-gradient(135deg, #482e83 0%, #685ca8 100%);
@@ -154,7 +179,7 @@ $conn->close();
       position: relative;
       z-index: 2;
     }
-
+    
     .hero h1 {
       font-size: 3.5rem;
       font-weight: 300;
@@ -598,7 +623,7 @@ $conn->close();
     .pdf-button {
       background: linear-gradient(135deg, #482e83, #685ca8);
       color: white;
-      padding: 0.6rem 1.2rem;
+      padding: 0.6rem 2.6rem;
       border-radius: 20px;
       text-decoration: none;
       font-size: 0.85rem;
@@ -715,28 +740,33 @@ $conn->close();
   </header>
 
   <!-- Hero Section -->
-  <section id="home" class="hero">
-    <div class="hero-content">
-      
-      <h1>Bienvenido a Emavra</h1>
-      <p class="hero-subtitle">
-        Transformamos Cochabamba construyendo un futuro más verde y sostenible. 
-        Nuestra plataforma web ambiental conecta la comunidad con la naturaleza 
-        en colaboración con la Empresa Municipal de Áreas Verdes.
-      </p>
-      
-      <div class="hero-buttons">
-        <a href="#about" class="btn btn-primary">
-          <i class="fas fa-leaf"></i>
-          Conoce más
-        </a>
-        <a href="#map" class="btn btn-secondary">
-          <i class="fas fa-map"></i>
-          Ver mapa
-        </a>
-      </div>
+<section id="home" class="hero">
+  <div class="hero-content">
+    
+    
+    <h1>Bienvenido a Emavra</h1>
+    <!-- Círculo con imagen -->
+    <div class="hero-image-circle">
+      <img src="ruta-a-tu-imagen.jpg" alt="Emavra">
     </div>
-  </section>
+    <p class="hero-subtitle">
+      Transformamos Cochabamba construyendo un futuro más verde y sostenible. 
+      Nuestra plataforma web ambiental conecta la comunidad con la naturaleza 
+      en colaboración con la Empresa Municipal de Áreas Verdes.
+    </p>
+    
+    <div class="hero-buttons">
+      <a href="#about" class="btn btn-primary">
+        <i class="fas fa-leaf"></i>
+        Conoce más
+      </a>
+      <a href="#map" class="btn btn-secondary">
+        <i class="fas fa-map"></i>
+        Ver mapa
+      </a>
+    </div>
+  </div>
+</section>
 
   
 
@@ -904,7 +934,7 @@ $conn->close();
 
         <div class="footer-section">
           <h3>Síguenos</h3>
-          <p><i class="fab fa-facebook"></i> Facebook</p>
+          <p><i class="fab fa-facebook"> </i> Facebook</p>
           <p><i class="fab fa-instagram"></i> Instagram</p>
           <p><i class="fab fa-whatsapp"></i> WhatsApp</p>
         </div>
@@ -917,244 +947,264 @@ $conn->close();
   </footer>
 
   <script>
+    
     // Mapbox configuration
-    mapboxgl.accessToken = 'pk.eyJ1IjoiYWxlc3NpcyIsImEiOiJjbGcxbHBtbHQwdDU5M2RubDFodjY3a2x0In0.NXe43GdM4PJBj7ow0Dnkpw';
+mapboxgl.accessToken = 'pk.eyJ1IjoiYWxlc3NpcyIsImEiOiJjbGcxbHBtbHQwdDU5M2RubDFodjY3a2x0In0.NXe43GdM4PJBj7ow0Dnkpw';
 
-    const map = new mapboxgl.Map({
-      container: 'map',
-      style: 'mapbox://styles/mapbox/outdoors-v11',
-      center: [-66.156977, -17.393838],
-      zoom: 17,
+// Get trees data from PHP
+const arboles = <?php echo json_encode($arboles); ?>;
+let allMarkers = [];
+
+// URL parameter function
+function getURLParameter(name) {
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get(name);
+}
+
+// Check if coming from QR code
+const treeId = getURLParameter('tree_id');
+const isFromQR = treeId !== null;
+
+// Si viene de QR, iniciar el mapa más alejado para ver la animación
+const map = new mapboxgl.Map({
+  container: 'map',
+  style: 'mapbox://styles/mapbox/outdoors-v11',
+  center: isFromQR ? [-66.156977, -17.390838] : [-66.156977, -17.393838], // Más alejado si es QR
+  zoom: isFromQR ? 14 : 17, // Zoom out si es QR
+  pitch: 0,
+  bearing: isFromQR ? 0 : -17.6 // Sin rotación si es QR
+});
+
+map.on('load', function() {
+  // Load all trees
+  arboles.forEach(arbol => {
+    const coordinates = arbol.coordenadas.replace('POINT(', '').replace(')', '').split(' ');
+    const lng = parseFloat(coordinates[0]);
+    const lat = parseFloat(coordinates[1]);
+
+    if (isNaN(lng) || isNaN(lat)) {
+      console.error("Invalid coordinates:", arbol);
+      return;
+    }
+
+    // Create marker element
+    const el = document.createElement('div');
+    el.className = 'tree-marker';
+
+    // Set border color based on tree state
+    switch (arbol.estado.toLowerCase()) {
+      case 'exótico':
+        el.style.border = '3px solid #ffa502';
+        break;
+      case 'nativo':
+        el.style.border = '3px solid #2ed573';
+        break;
+      default:
+        el.style.border = '3px solid #57606f';
+    }
+
+    // Create popup content
+    const currentUrl = window.location.origin + window.location.pathname;
+    const correctQrUrl = `${currentUrl}?tree_id=${arbol.id}#map`;
+    const popupContent = `
+      <div class="popup-header">
+        <i class="fas fa-tree"></i>
+        <h3>${arbol.especie}</h3>
+      </div>
+      
+      <img src="${arbol.fotoUrl}" alt="Foto del árbol" class="popup-image">
+
+      <div class="popup-info">
+        <i class="fas fa-circle"></i>
+        <strong>Nombre común:</strong> ${arbol.nombre_comun}
+      </div>
+      
+      <div class="popup-info">
+        <i class="fas fa-calendar"></i>
+        <strong>Edad:</strong> ${arbol.edad} años
+      </div>
+      
+      <div class="popup-info">
+        <i class="fas fa-arrows-alt-v"></i>
+        <strong>Altura:</strong> ${arbol.altura} m
+      </div>
+      
+      <div class="popup-info">
+        <i class="fas fa-circle"></i>
+        <strong>Diámetro:</strong> ${arbol.diametroTronco} cm
+      </div>
+      <div class="popup-info">
+        <i class="fas fa-shield-alt"></i>
+        <strong>Estado:</strong> ${arbol.estado}
+      </div>
+      
+    ${arbol.pdfUrl ? `
+      <div class="popup-info pdf-container">
+        <a href="${arbol.pdfUrl}" target="_blank" class="pdf-button">
+          <i class="fas fa-file-pdf"></i> Ver más información
+        </a>
+      </div>
+    ` : ''}
+      
+      <div style="text-align: center; margin-top: 15px;">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(correctQrUrl)}" 
+             alt="QR del árbol" class="qr-code">
+      </div>
+    `;
+
+    // Create popup
+    const popup = new mapboxgl.Popup({
+      offset: 12,
+      anchor: "left",
+      closeButton: true,
+      closeOnClick: false,
+      maxWidth: '350px'
+    }).setHTML(popupContent);
+
+    // Create marker
+    const marker = new mapboxgl.Marker(el)
+      .setLngLat([lng, lat])
+      .setPopup(popup)
+      .addTo(map);
+
+    // Add click event to marker for zoom effect
+    el.addEventListener('click', () => {
+      // Fly to marker with smooth animation
+      map.flyTo({
+        center: [lng + 0.0002, lat],
+        zoom: 19,
+        pitch: 0,
+        bearing: 0,
+        essential: true,
+        duration: 800
+      });
+      
+      // Open popup after animation
+      setTimeout(() => {
+        popup.addTo(map);
+      }, 1000);
+    });
+
+    // Store marker with ID for reference
+    allMarkers.push({
+      id: arbol.id,
+      marker: marker,
+      popup: popup,
+      coordinates: [lng, lat],
+      arbol: arbol
+    });
+  });
+
+  // Check for tree_id in URL (QR code functionality)
+  if (treeId) {
+    // Scroll to map immediately when coming from QR
+    setTimeout(() => {
+      const mapElement = document.getElementById('map');
+      if (mapElement) {
+        mapElement.scrollIntoView({ 
+          behavior: 'auto', 
+          block: 'start' 
+        });
+      }
+    }, 300);
+    
+    // Then start the tree animation
+    setTimeout(() => {
+      openTreePopup(parseInt(treeId));
+    }, 300);
+  }
+});
+
+function openTreePopup(treeId) {
+  const targetMarker = allMarkers.find(item => item.id == treeId);
+ 
+  if (targetMarker) {
+    // Ajustar las coordenadas para centrar mejor
+    const adjustedCoordinates = [
+      targetMarker.coordinates[0] + 0.0002,
+      targetMarker.coordinates[1] - 0.0000
+    ];
+    
+    // Fly to specific tree with enhanced zoom and smoother animation
+    map.flyTo({
+      center: adjustedCoordinates,
+      zoom: 19,
       pitch: 0,
-      bearing: -17.6
-      
+      bearing: 0,
+      essential: true,
+      duration: 2500, // Animación más larga para QR
+      easing: function(t) {
+        // Easing más suave con ease-in-out
+        return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+      }
     });
-
-    // Get trees data from PHP
-    const arboles = <?php echo json_encode($arboles); ?>;
-    let allMarkers = [];
-
-    // URL parameter function
-    function getURLParameter(name) {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get(name);
+    
+    // Open popup after animation completes
+    setTimeout(() => {
+      targetMarker.popup.addTo(map);
+    }, 2700);
+    
+    // Clean URL after showing tree
+    if (window.history && window.history.replaceState) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('tree_id');
+      window.history.replaceState({}, document.title, url.pathname + url.hash);
     }
+  } else {
+    console.error("Tree not found with ID:", treeId);
+    alert("Árbol no encontrado. El código QR podría estar dañado o el árbol ya no existe.");
+  }
+}
 
-    map.on('load', function() {
-      // Load all trees
-      arboles.forEach(arbol => {
-        const coordinates = arbol.coordenadas.replace('POINT(', '').replace(')', '').split(' ');
-        const lng = parseFloat(coordinates[0]);
-        const lat = parseFloat(coordinates[1]);
+// Header scroll effect
+window.addEventListener('scroll', function() {
+  const header = document.querySelector('.header');
+  if (window.scrollY > 100) {
+    header.style.background = 'rgba(255, 255, 255, 0.98)';
+    header.style.boxShadow = '0 2px 30px rgba(0, 0, 0, 0.15)';
+  } else {
+    header.style.background = 'rgba(255, 255, 255, 0.95)';
+    header.style.boxShadow = '0 2px 20px rgba(0, 0, 0, 0.1)';
+  }
+});
 
-        if (isNaN(lng) || isNaN(lat)) {
-          console.error("Invalid coordinates:", arbol);
-          return;
-        }
-
-        // Create marker element
-        const el = document.createElement('div');
-        el.className = 'tree-marker';
-
-        // Set border color based on tree state
-        switch (arbol.estado.toLowerCase()) {
-          
-          case 'exótico':
-            el.style.border = '3px solid #ffa502';
-            break;
-          case 'nativo':
-            el.style.border = '3px solid #2ed573';
-            break;
-          default:
-            el.style.border = '3px solid #57606f';
-        }
-
-        // Create popup content
-        const currentUrl = window.location.origin + window.location.pathname;
-        const correctQrUrl = `${currentUrl}?tree_id=${arbol.id}`;
-        const popupContent = `
-          <div class="popup-header">
-            <i class="fas fa-tree"></i>
-            <h3>${arbol.especie}</h3>
-          </div>
-          
-          <img src="${arbol.fotoUrl}" alt="Foto del árbol" class="popup-image">
-
-          <div class="popup-info">
-            <i class="fas fa-circle"></i>
-            <strong>Nombre común:</strong> ${arbol.nombre_comun}
-          </div>
-          
-          <div class="popup-info">
-            <i class="fas fa-calendar"></i>
-            <strong>Edad:</strong> ${arbol.edad} años
-          </div>
-          
-          <div class="popup-info">
-            <i class="fas fa-arrows-alt-v"></i>
-            <strong>Altura:</strong> ${arbol.altura} m
-          </div>
-          
-          <div class="popup-info">
-            <i class="fas fa-circle"></i>
-            <strong>Diámetro:</strong> ${arbol.diametroTronco} cm
-          </div>
-          <div class="popup-info">
-            <i class="fas fa-shield-alt"></i>
-            <strong>Estado:</strong> ${arbol.estado}
-          </div>
-          
-        ${arbol.pdfUrl ? `
-  <div class="popup-info pdf-container">
-    <a href="${arbol.pdfUrl}" target="_blank" class="pdf-button">
-      <i class="fas fa-file-pdf"></i> Ver más información
-    </a>
-  </div>
-` : ''}
-          
-          
-          
-          <div style="text-align: center; margin-top: 15px;">
-            
-            <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(correctQrUrl)}" 
-                 alt="QR del árbol" class="qr-code">
-          </div>
-        `;
-
-        // Create popup
-        const popup = new mapboxgl.Popup({
-          offset: 12,
-          anchor: "left",
-          closeButton: true,
-          closeOnClick: false,
-          maxWidth: '350px'
-          
-        }).setHTML(popupContent);
-
-        // Create marker
-        const marker = new mapboxgl.Marker(el)
-          .setLngLat([lng, lat])
-          .setPopup(popup)
-          .addTo(map);
-
-        // Add click event to marker for zoom effect
-        el.addEventListener('click', () => {
-          // Fly to marker with smooth animation
-          map.flyTo({
-            center: [lng + 0.0002 , lat],
-            zoom: 19,
-            pitch: 0,
-            bearing: 0,
-            essential: true,
-            duration: 800
-          });
-          
-          // Open popup after animation
-          setTimeout(() => {
-            popup.addTo(map);
-          }, 1000);
-        });
-
-        // Store marker with ID for reference
-        allMarkers.push({
-          id: arbol.id,
-          marker: marker,
-          popup: popup,
-          coordinates: [lng, lat],
-          arbol: arbol
-        });
+// Smooth scrolling for navigation links
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+  anchor.addEventListener('click', function (e) {
+    e.preventDefault();
+    const target = document.querySelector(this.getAttribute('href'));
+    if (target) {
+      const offsetTop = target.offsetTop - 80;
+      window.scrollTo({
+        top: offsetTop,
+        behavior: 'smooth'
       });
-
-      // Check for tree_id in URL (QR code functionality)
-      const treeId = getURLParameter('tree_id');
-      if (treeId) {
-        setTimeout(() => {
-          openTreePopup(parseInt(treeId));
-        }, 1000);
-      }
-    });
-
-    // Function to open specific tree popup
-    function openTreePopup(treeId) {
-      const targetMarker = allMarkers.find(item => item.id == treeId);
-      
-      if (targetMarker) {
-        // Fly to specific tree with enhanced zoom
-        map.flyTo({
-          center: targetMarker.coordinates,
-          zoom: 19,
-          pitch: 60,
-          bearing: 0,
-          essential: true,
-          duration: 2500
-        });
-
-        // Open popup after animation
-        setTimeout(() => {
-          targetMarker.popup.addTo(map);
-        }, 1500);
-
-        // Clean URL after showing tree
-        if (window.history && window.history.replaceState) {
-          const url = new URL(window.location.href);
-          url.searchParams.delete('tree_id');
-          window.history.replaceState({}, document.title, url.pathname + url.hash);
-        }
-      } else {
-        console.error("Tree not found with ID:", treeId);
-        alert("Árbol no encontrado. El código QR podría estar dañado o el árbol ya no existe.");
-      }
     }
+  });
+});
 
-    // Header scroll effect
-    window.addEventListener('scroll', function() {
-      const header = document.querySelector('.header');
-      if (window.scrollY > 100) {
-        header.style.background = 'rgba(255, 255, 255, 0.98)';
-        header.style.boxShadow = '0 2px 30px rgba(0, 0, 0, 0.15)';
-      } else {
-        header.style.background = 'rgba(255, 255, 255, 0.95)';
-        header.style.boxShadow = '0 2px 20px rgba(0, 0, 0, 0.1)';
-      }
-    });
+// Animation on scroll
+const observerOptions = {
+  threshold: 0.1,
+  rootMargin: '0px 0px -50px 0px'
+};
 
-    // Smooth scrolling for navigation links
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-      anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
-        if (target) {
-          const offsetTop = target.offsetTop - 80;
-          window.scrollTo({
-            top: offsetTop,
-            behavior: 'smooth'
-          });
-        }
-      });
-    });
+const observer = new IntersectionObserver(function(entries) {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.style.opacity = '1';
+      entry.target.style.transform = 'translateY(0)';
+    }
+  });
+}, observerOptions);
 
-    // Animation on scroll
-    const observerOptions = {
-      threshold: 0.1,
-      rootMargin: '0px 0px -50px 0px'
-    };
-
-    const observer = new IntersectionObserver(function(entries) {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.style.opacity = '1';
-          entry.target.style.transform = 'translateY(0)';
-        }
-      });
-    }, observerOptions);
-
-    // Observe elements for animation
-    document.querySelectorAll('.feature-card, .honor-card').forEach(el => {
-      el.style.opacity = '0';
-      el.style.transform = 'translateY(30px)';
-      el.style.transition = 'all 0.6s ease';
-      observer.observe(el);
-    });
+// Observe elements for animation
+document.querySelectorAll('.feature-card, .honor-card').forEach(el => {
+  el.style.opacity = '0';
+  el.style.transform = 'translateY(30px)';
+  el.style.transition = 'all 0.6s ease';
+  observer.observe(el);
+});
   </script>
 </body>
 </html>

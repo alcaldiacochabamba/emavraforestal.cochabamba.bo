@@ -533,7 +533,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // ===============================================
         
         $baseUrl = getBaseUrl();
-        $treeUrl = $baseUrl . "/index.php?tree_id=" . $lastId;
+        $treeUrl = $baseUrl . "/index.php?tree_id=" . $lastId ."#map";
         
         $qrResult = generateQR($lastId, $treeUrl);
         
