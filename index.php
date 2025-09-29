@@ -1121,14 +1121,14 @@ function openTreePopup(treeId) {
   if (targetMarker) {
     // Ajustar las coordenadas para centrar mejor
     const adjustedCoordinates = [
-      targetMarker.coordinates[0] + 0.00025,
+      targetMarker.coordinates[0] + 0.0008,
       targetMarker.coordinates[1] - 0.0000
     ];
     
     // Fly to specific tree with enhanced zoom and smoother animation
     map.flyTo({
       center: adjustedCoordinates,
-      zoom: 19,
+      zoom: 17,
       pitch: 0,
       bearing: 0,
       essential: true,

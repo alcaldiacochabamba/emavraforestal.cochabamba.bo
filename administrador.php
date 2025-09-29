@@ -1168,7 +1168,7 @@ $conn->close();
                         
                         <div class="form-group">
                             <label class="form-label">
-                                <i class="fas fa-tree"></i> Especie Del Árbol
+                                <i class="fas fa-tree"></i> Nombre Científico
                             </label>
                             <input type="text" name="especie" class="form-input" placeholder="Ej: Molle" required />
                         </div>
