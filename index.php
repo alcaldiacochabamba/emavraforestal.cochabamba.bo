@@ -747,7 +747,7 @@ $conn->close();
     <h1>Bienvenido a Emavra</h1>
     <!-- Círculo con imagen -->
     <div class="hero-image-circle">
-      <img src="ruta-a-tu-imagen.jpg" alt="Emavra">
+      <img src="img/emavraini.jpg" alt="Emavra">
     </div>
     <p class="hero-subtitle">
       Transformamos Cochabamba construyendo un futuro más verde y sostenible. 
@@ -1121,7 +1121,7 @@ function openTreePopup(treeId) {
   if (targetMarker) {
     // Ajustar las coordenadas para centrar mejor
     const adjustedCoordinates = [
-      targetMarker.coordinates[0] + 0.0002,
+      targetMarker.coordinates[0] + 0.00025,
       targetMarker.coordinates[1] - 0.0000
     ];
     
