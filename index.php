@@ -1104,7 +1104,7 @@ $conn->close();
     <h1>Bienvenido a SIF</h1>
     <!-- Círculo con imagen -->
     <div class="hero-image-circle">
-      <img src="img/567.jpg" alt="Emavra">
+      <img src="img/logoofi.jpg" alt="Emavra">
     </div>
     <p class="hero-subtitle">
       Sistema de Información
