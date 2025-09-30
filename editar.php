@@ -316,124 +316,191 @@ if (isset($_GET['export'])) {
 // ===============================================
 // PROCESAR ACTUALIZACIÓN (POST)
 // ===============================================
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'])) {
+    $conn->begin_transaction();
+    
     try {
         $id = intval($_POST['id']);
         
+        if ($id <= 0) {
+            throw new Exception("ID inválido");
+        }
+        
         // Obtener datos actuales
         $stmt = $conn->prepare("SELECT fotoUrl, pdfUrl FROM arboles WHERE id = ?");
+        if (!$stmt) {
+            throw new Exception("Error preparando consulta: " . $conn->error);
+        }
+        
         $stmt->bind_param("i", $id);
         $stmt->execute();
-        $current = $stmt->get_result()->fetch_assoc();
-        $stmt->close();
+        $result = $stmt->get_result();
         
-        if (!$current) {
+        if ($result->num_rows === 0) {
             throw new Exception("Árbol no encontrado");
         }
         
-        // Recopilar campos
-        $especie = trim($_POST['especie']);
-        $nombre_comun = trim($_POST['nombre_comun']);
-        $codigo_arbol = trim($_POST['codigo_arbol']);
-        $edad = intval($_POST['edad']);
-        $estado = trim($_POST['estado']);
-        $altura = floatval($_POST['altura']);
-        $diametroTronco = floatval($_POST['diametroTronco']);
-        $diametro_copa = floatval($_POST['diametro_copa']);
-        $inspector = trim($_POST['inspector']);
-        $propiedad = trim($_POST['propiedad']);
-        $otb = trim($_POST['otb']);
-        $nombre_area_verde = trim($_POST['nombre_area_verde']);
-        $estado_fitosanitario = trim($_POST['estado_fitosanitario']);
+        $current = $result->fetch_assoc();
+        $stmt->close();
+        
+        // Validar y recopilar datos
+        $campos = [
+            'especie' => trim($_POST['especie'] ?? ''),
+            'nombre_comun' => trim($_POST['nombre_comun'] ?? ''),
+            'codigo_arbol' => trim($_POST['codigo_arbol'] ?? ''),
+            'estado' => trim($_POST['estado'] ?? ''),
+            'inspector' => trim($_POST['inspector'] ?? ''),
+            'propiedad' => trim($_POST['propiedad'] ?? ''),
+            'otb' => trim($_POST['otb'] ?? ''),
+            'nombre_area_verde' => trim($_POST['nombre_area_verde'] ?? ''),
+            'estado_fitosanitario' => trim($_POST['estado_fitosanitario'] ?? '')
+        ];
+        
+        // Validar campos obligatorios
+        $requeridos = ['especie', 'nombre_comun', 'codigo_arbol', 'estado'];
+        foreach ($requeridos as $campo) {
+            if (empty($campos[$campo])) {
+                throw new Exception("El campo {$campo} es obligatorio");
+            }
+        }
+        
+        $edad = max(0, intval($_POST['edad'] ?? 0));
+        $altura = max(0, floatval($_POST['altura'] ?? 0));
+        $diametroTronco = max(0, floatval($_POST['diametroTronco'] ?? 0));
+        $diametro_copa = max(0, floatval($_POST['diametro_copa'] ?? 0));
         
         $fotoUrl = $current['fotoUrl'];
         $pdfUrl = $current['pdfUrl'];
         
-        // Procesar nueva foto
+        // Procesar foto
         if (isset($_FILES['foto']) && $_FILES['foto']['error'] === UPLOAD_ERR_OK) {
             $file = $_FILES['foto'];
             $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
             $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
             
-            if (in_array($ext, $allowed) && $file['size'] <= 8*1024*1024) {
-                $newName = 'img_' . time() . '_' . uniqid() . '.' . $ext;
-                $targetPath = 'uploads/trees/' . $newName;
-                
-                if (!is_dir('uploads/trees')) {
-                    mkdir('uploads/trees', 0777, true);
-                }
-                
-                if (move_uploaded_file($file['tmp_name'], $targetPath)) {
-                    if (!empty($current['fotoUrl']) && file_exists($current['fotoUrl'])) {
-                        unlink($current['fotoUrl']);
-                    }
-                    $fotoUrl = $targetPath;
-                } else {
-                    throw new Exception("Error al subir la foto");
-                }
-            } else {
-                throw new Exception("Formato de imagen no válido o tamaño excedido");
+            if (!in_array($ext, $allowed)) {
+                throw new Exception("Formato de imagen no permitido");
             }
+            
+            if ($file['size'] > 8388608) { // 8MB
+                throw new Exception("Imagen muy grande (máx 8MB)");
+            }
+            
+            if (!is_dir('uploads/trees')) {
+                mkdir('uploads/trees', 0777, true);
+            }
+            
+            $newName = 'img_' . time() . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
+            $targetPath = 'uploads/trees/' . $newName;
+            
+            if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
+                throw new Exception("Error al guardar imagen");
+            }
+            
+            if (!empty($current['fotoUrl']) && file_exists($current['fotoUrl'])) {
+                @unlink($current['fotoUrl']);
+            }
+            
+            $fotoUrl = $targetPath;
+        } elseif (isset($_FILES['foto']) && $_FILES['foto']['error'] !== UPLOAD_ERR_NO_FILE) {
+            throw new Exception("Error al subir foto: código " . $_FILES['foto']['error']);
         }
         
-        // Procesar nuevo PDF
+        // Procesar PDF
         if (isset($_FILES['pdf']) && $_FILES['pdf']['error'] === UPLOAD_ERR_OK) {
             $file = $_FILES['pdf'];
             $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
             
-            if ($ext === 'pdf' && $file['size'] <= 10*1024*1024) {
-                $newName = 'pdf_' . time() . '_' . uniqid() . '.pdf';
-                $targetPath = 'uploads/pdfs/' . $newName;
-                
-                if (!is_dir('uploads/pdfs')) {
-                    mkdir('uploads/pdfs', 0777, true);
-                }
-                
-                if (move_uploaded_file($file['tmp_name'], $targetPath)) {
-                    if (!empty($current['pdfUrl']) && file_exists($current['pdfUrl'])) {
-                        unlink($current['pdfUrl']);
-                    }
-                    $pdfUrl = $targetPath;
-                    error_log("PDF guardado exitosamente en: " . $targetPath);
-                } else {
-                    throw new Exception("Error al subir el PDF");
-                }
-            } else {
-                throw new Exception("Archivo PDF no válido o tamaño excedido (máx 10MB)");
+            if ($ext !== 'pdf') {
+                throw new Exception("Solo archivos PDF permitidos");
             }
+            
+            if ($file['size'] > 10485760) { // 10MB
+                throw new Exception("PDF muy grande (máx 10MB)");
+            }
+            
+            if (!is_dir('uploads/pdfs')) {
+                mkdir('uploads/pdfs', 0777, true);
+            }
+            
+            $newName = 'pdf_' . time() . '_' . bin2hex(random_bytes(8)) . '.pdf';
+            $targetPath = 'uploads/pdfs/' . $newName;
+            
+            if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
+                throw new Exception("Error al guardar PDF");
+            }
+            
+            if (!empty($current['pdfUrl']) && file_exists($current['pdfUrl'])) {
+                @unlink($current['pdfUrl']);
+            }
+            
+            $pdfUrl = $targetPath;
+        } elseif (isset($_FILES['pdf']) && $_FILES['pdf']['error'] !== UPLOAD_ERR_NO_FILE) {
+            throw new Exception("Error al subir PDF: código " . $_FILES['pdf']['error']);
         }
         
-        // Eliminar PDF si se marcó el checkbox
-        if (isset($_POST['eliminar_pdf']) && $_POST['eliminar_pdf'] == '1') {
+        // Eliminar PDF si se solicitó
+        if (isset($_POST['eliminar_pdf']) && $_POST['eliminar_pdf'] === '1') {
             if (!empty($current['pdfUrl']) && file_exists($current['pdfUrl'])) {
-                unlink($current['pdfUrl']);
+                @unlink($current['pdfUrl']);
             }
             $pdfUrl = null;
         }
         
-        // Actualizar BD
-        $stmt = $conn->prepare("UPDATE arboles SET 
-            especie=?, nombre_comun=?, codigo_arbol=?, edad=?, estado=?, 
-            altura=?, diametroTronco=?, diametro_copa=?, inspector=?, propiedad=?, 
-            otb=?, nombre_area_verde=?, estado_fitosanitario=?, fotoUrl=?, pdfUrl=?
-            WHERE id=?");
+        // Actualizar en base de datos
+        $sql = "UPDATE arboles SET 
+                especie = ?, 
+                nombre_comun = ?, 
+                codigo_arbol = ?, 
+                edad = ?, 
+                estado = ?, 
+                altura = ?, 
+                diametroTronco = ?, 
+                diametro_copa = ?, 
+                inspector = ?, 
+                propiedad = ?, 
+                otb = ?, 
+                nombre_area_verde = ?, 
+                estado_fitosanitario = ?, 
+                fotoUrl = ?, 
+                pdfUrl = ?
+                WHERE id = ?";
+        
+        $stmt = $conn->prepare($sql);
+        if (!$stmt) {
+            throw new Exception("Error en consulta: " . $conn->error);
+        }
         
         $stmt->bind_param("sssisdddsssssssi",
-            $especie, $nombre_comun, $codigo_arbol, $edad, $estado,
-            $altura, $diametroTronco, $diametro_copa, $inspector, $propiedad,
-            $otb, $nombre_area_verde, $estado_fitosanitario, $fotoUrl, $pdfUrl, $id
+            $campos['especie'],
+            $campos['nombre_comun'],
+            $campos['codigo_arbol'],
+            $edad,
+            $campos['estado'],
+            $altura,
+            $diametroTronco,
+            $diametro_copa,
+            $campos['inspector'],
+            $campos['propiedad'],
+            $campos['otb'],
+            $campos['nombre_area_verde'],
+            $campos['estado_fitosanitario'],
+            $fotoUrl,
+            $pdfUrl,
+            $id
         );
         
-        if ($stmt->execute()) {
-            $mensaje = "✓ Árbol actualizado exitosamente";
-            $tipo_mensaje = "success";
-            error_log("Actualización exitosa - PDF URL: " . ($pdfUrl ?? 'NULL'));
-        } else {
+        if (!$stmt->execute()) {
             throw new Exception("Error al actualizar: " . $stmt->error);
         }
-        $stmt->close();
         
-        // Recargar datos actualizados
+        $stmt->close();
+        $conn->commit();
+        
+        $mensaje = "✓ Árbol actualizado correctamente";
+        $tipo_mensaje = "success";
+        
+        // Recargar datos
         $stmt = $conn->prepare("SELECT * FROM arboles WHERE id = ?");
         $stmt->bind_param("i", $id);
         $stmt->execute();
@@ -441,9 +508,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->close();
         
     } catch (Exception $e) {
+        $conn->rollback();
         $mensaje = "✗ Error: " . $e->getMessage();
         $tipo_mensaje = "error";
-        error_log("Error en editar.php: " . $e->getMessage());
+        
+        error_log("ERROR EDITAR.PHP: " . $e->getMessage());
+        error_log("POST: " . print_r($_POST, true));
+        error_log("FILES: " . print_r($_FILES, true));
+        
+        // Recargar árbol seleccionado en caso de error
+        if (isset($id) && $id > 0) {
+            $stmt = $conn->prepare("SELECT * FROM arboles WHERE id = ?");
+            $stmt->bind_param("i", $id);
+            $stmt->execute();
+            $arbol_seleccionado = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
+        }
     }
 }
 

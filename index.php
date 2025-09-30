@@ -100,6 +100,7 @@ $conn->close();
   color: #482e83;
   font-weight: 500;
   line-height: 1.2;
+  
 }
 
     .nav-links {
@@ -1081,7 +1082,8 @@ $conn->close();
       <a href="#home" class="logo">
         <img src="img/logoemavrita.png" alt="Emavra Logo" class="logo-img">
         <div class="logo-text">
-    <span class="logo-title">Cap. Manfred Reyes Villa</span>
+    <span class="logo-title"> Gestión <br>
+    Cap. Manfred Reyes Villa</span>
   </div>
       </a>
       <ul class="nav-links">
@@ -1099,13 +1101,17 @@ $conn->close();
   <div class="hero-content">
     
     
-    <h1>Bienvenido a S.I.F</h1>
+    <h1>Bienvenido a SIF</h1>
     <!-- Círculo con imagen -->
     <div class="hero-image-circle">
-      <img src="img/emavraini.jpg" alt="Emavra">
+      <img src="img/567.jpg" alt="Emavra">
     </div>
     <p class="hero-subtitle">
-      Transformamos Cochabamba construyendo un futuro más verde y sostenible. 
+      Sistema de Información
+Forestal para planificar y
+construir un futuro más
+verde, sustentable y
+sostenible.
     </p>
     
     <div class="hero-buttons">
@@ -1129,8 +1135,12 @@ $conn->close();
       <div class="section-header">
         <h2 class="section-title">¿Qué Hacemos?</h2>
         <p class="section-subtitle">
-          Conectamos la tecnología con la naturaleza para crear un impacto positivo 
-          en el medio ambiente de Cochabamba
+          Conectamos la
+tecnología con la
+naturaleza para generar
+un impacto positivo en
+el medio ambiente de
+Cochabamba.
         </p>
       </div>
 
@@ -1141,8 +1151,13 @@ $conn->close();
           </div>
           <h3 class="feature-title">Mapa Interactivo</h3>
           <p class="feature-description">
-            Descubre cada rincón verde de la Plaza 14 De Septiembre, identificando árboles según 
-            su tipo con información detallada.
+            Descubre cada rincón
+verde de las plazas,
+plazuelas y jardineras
+centrales de nuestra
+Llajta identificando
+arboles según su tipo de
+información detallada.
           </p>
         </div>
 
@@ -1150,10 +1165,13 @@ $conn->close();
           <div class="feature-icon">
             <i class="fas fa-seedling"></i>
           </div>
-          <h3 class="feature-title">Cuidado de Árboles</h3>
+          <h3 class="feature-title">Comunidad arborista</h3>
           <p class="feature-description">
-            Conviértete en un guardián del verde. 
-            Cada registro contribuye al crecimiento de nuestro ecosistema urbano.
+            Conviértete en un
+guardián forestal,
+registrate y contribuye en
+el crecimiento del
+ecosistema urbano.
           </p>
         </div>
 
@@ -1161,10 +1179,13 @@ $conn->close();
           <div class="feature-icon">
             <i class="fas fa-users"></i>
           </div>
-          <h3 class="feature-title">Comunidad Verde</h3>
+          <h3 class="feature-title">Formación verde</h3>
           <p class="feature-description">
-            Únete a eventos, talleres y actividades comunitarias. 
-            Aprende sobre la sostenibilidad y participa en el impacto ambiental.
+            Únete a nuestros cursos,
+talleres y diferentes
+actividades grupales. de
+forestación y
+reforestación.
           </p>
         </div>
       </div>
@@ -1203,7 +1224,7 @@ $conn->close();
   <section id="honor" class="honor-wall">
     <div class="container">
       <div class="section-header">
-        <h2 class="section-title">Muro de Héroes Anónimos</h2>
+        <h2 class="section-title">Muro de Héroes</h2>
         <p class="section-subtitle">
           Conoce a quienes están haciendo la diferencia en nuestro ecosistema urbano.
         </p>
@@ -1212,8 +1233,10 @@ $conn->close();
       <div class="honor-grid">
         <div class="honor-card">
           <img src="img/volun.jpg" alt="Voluntario 1" class="honor-avatar">
-          <h3 class="honor-name">Voluntarios de Reforestación</h3>
-          <p class="honor-contribution">🌿 Plantaron más de 100 plantines en áreas urbanas clave.</p>
+          <h3 class="honor-name">Defensores ambientales</h3>
+          <p class="honor-contribution">🌿 Grupo de voluntarios que
+son parte de la
+reforestacíon</p>
         </div>
 
         <div class="honor-card">
@@ -1224,8 +1247,11 @@ $conn->close();
 
         <div class="honor-card">
           <img src="img/defensores.jpg" alt="Voluntario 3" class="honor-avatar">
-          <h3 class="honor-name">Defensores Ambientales</h3>
-          <p class="honor-contribution">🌿 Promueven el uso de plantas nativas en el paisajismo.</p>
+          <h3 class="honor-name">Familia Forestal</h3>
+          <p class="honor-contribution">🌿 Aliados estratégicos que
+contribuyen en la
+preservación de nuestro
+ecosistema.</p>
         </div>
 
         <div class="honor-card">
@@ -1243,7 +1269,9 @@ $conn->close();
         <div class="honor-card">
           <img src="img/colabo.png" alt="Voluntario 6" class="honor-avatar">
           <h3 class="honor-name">Colaboradores Vecinales</h3>
-          <p class="honor-contribution">🌿 Participan activamente en las campañas de limpieza y siembra.</p>
+          <p class="honor-contribution">🌿 Grupos sociales que
+impulsan el trabajo de
+forestación en sus zonas.</p>
         </div>
       </div>
     </div>
@@ -1274,22 +1302,21 @@ $conn->close();
 
         <div class="footer-section">
           <h3>Contacto</h3>
-          <p><i class="fas fa-envelope"></i> info@emavra.com</p>
-          <p><i class="fas fa-phone"></i> +591 4 123-4567</p>
-          <p><i class="fas fa-map-marker-alt"></i> Cochabamba, Bolivia</p>
+          <p><i class="fas fa-envelope"></i> emavra.cochabamba.bo</p>
+          <p><i class="fas fa-phone"></i> +4 4448430</p>
+          <p><i class="fas fa-map-marker-alt"></i> C. Man Hego S/N esq. Av.
+Beneméritos del Chaco ,
+Cochabamba, Bolivia.</p>
         </div>
 
-        <div class="footer-section">
-          <h3>Enlaces Útiles</h3>
-          <p><a href="https://www.lostiempos.com/sites/default/files/ayma2021guiadeselecciondeespeciesparaelarboladourbanodecochabambaparacompartir_1_0.pdf" style="color: #ccc;">Información Legal</a></p>
-          
-        </div>
+        
 
         <div class="footer-section">
           <h3>Síguenos</h3>
-          <p><i class="fab fa-facebook"> </i> Facebook</p>
-          <p><i class="fab fa-instagram"></i> Instagram</p>
-          <p><i class="fab fa-whatsapp"></i> WhatsApp</p>
+
+          <p><a href="https://www.facebook.com/EmavraCbba/" target="_blank" style="text-decoration:none; color:inherit;"><i class="fab fa-facebook"> </i> Facebook </a></p>
+          <p><a href="https://www.instagram.com/emavracbba/" target="_blank" style="text-decoration:none; color:inherit;"><i class="fab fa-instagram"></i> Instagram</a></p>
+          <p><i class="fab fa-whatsapp"></i> WhatsApp +591 69254248</p>
         </div>
       </div>
 
@@ -1398,7 +1425,7 @@ map.on('load', function() {
       </div>
       
       <div class="popup-info">
-        <i class="fas fa-calendar-alt"></i>
+        <i class="fas fa-sync-alt"></i>
         <strong>Edad:</strong> ${arbol.edad} años
       </div>
       
@@ -1409,8 +1436,9 @@ map.on('load', function() {
       
       <div class="popup-info">
         <i class="fas fa-circle"></i>
-        <strong>Diámetro:</strong> ${arbol.diametroTronco} cm
+        <strong>Perímetro De Tronco:</strong> ${arbol.diametroTronco} cm
       </div>
+      
       <div class="popup-info">
         <i class="fas fa-globe-americas"></i>
         <strong>Origen:</strong> ${arbol.estado}
