@@ -552,33 +552,37 @@ $conn->close();
     /* Popup Styles */
     .mapboxgl-popup-content {
       border-radius: 15px;
-      padding: 1.2rem;
+      padding: 1.0rem;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
       max-width: 300px;
+      
     
       font-family: 'Poppins', sans-serif;
       background: white;
     }
 
     .mapboxgl-popup-close-button {
-      color: #c9c9c9ff;
+      color: #482e83;
       font-size: 18px;
       padding: 5px;
     }
 
     .popup-header {
-      display: flex;
-      align-items: center;
-      margin-bottom: 1rem;
-      padding-bottom: 0.8rem;
-      border-bottom: 1px solid #eee;
-    }
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid #eee;
+  flex-direction: column;
+  gap: 0.5rem;
+}
 
     .popup-header i {
-      margin-right: 0.7rem;
-      color: #3ebeab;
-      font-size: 1.2rem;
-    }
+  color: #3ebeab;
+  font-size: 1.5rem;
+}
 
     .popup-header h3 {
       margin: 0;
@@ -596,7 +600,7 @@ $conn->close();
     }
 
     .popup-info {
-      font-size: 0.9rem;
+      font-size: 0.6rem;
       line-height: 1.5;
       margin-bottom: 0.1rem;
       display: flex;
@@ -623,25 +627,26 @@ $conn->close();
     .pdf-button {
       background: linear-gradient(135deg, #482e83, #685ca8);
       color: white;
-      padding: 0.6rem 2.6rem;
+      padding: 0.6rem 3.6rem;
       border-radius: 20px;
       text-decoration: none;
-      font-size: 0.85rem;
+      font-size: 0.7rem;
       font-weight: 500;
       transition: all 0.3s ease;
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
+      
     }
 
     .pdf-button:hover {
       transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(72, 46, 131, 0.3);
+      box-shadow: 0 5px 15px rgba(129, 119, 153, 0.3);
     }
 
     .qr-code {
-      width: 80px;
-      height: 80px;
+      width: 60px;
+      height: 60px;
       margin: 1rem auto 0;
       display: block;
       border-radius: 8px;
@@ -762,7 +767,7 @@ $conn->close();
 }
 
 .modal-header i {
-  font-size: 2rem;
+  font-size: 1rem;
 }
 
 .modal-header h3 {
@@ -828,7 +833,7 @@ $conn->close();
   padding: 0.6rem 1.5rem;
   border-radius: 30px;
   text-decoration: none;
-  font-size: 0.85rem;
+  font-size: 0.6rem;
   font-weight: 500;
   transition: all 0.3s ease;
   display: inline-flex;
@@ -837,6 +842,7 @@ $conn->close();
   border: none;
   cursor: pointer;
   margin-top: 0.5rem;
+  font-family: 'Arciform', 'Poppins', sans-serif;
 }
 
 .btn-fitosanitario:hover {
@@ -863,7 +869,7 @@ $conn->close();
 /* Responsive */
 @media (max-width: 768px) {
   .modal-fitosanitario {
-    max-width: 95%;
+    max-width: 90%;
     max-height: 90vh;
   }
   
@@ -1107,7 +1113,7 @@ $conn->close();
   <div class="modal-fitosanitario">
     <div class="modal-header">
       <i class="fas fa-heartbeat"></i>
-      <h3>Estado Fitosanitario</h3>
+      <h4>Estado Fitosanitario</h3>
       <button class="modal-close" onclick="cerrarModalFitosanitario()">
         <i class="fas fa-times"></i>
       </button>
@@ -1179,9 +1185,12 @@ map.on('load', function() {
     const correctQrUrl = `${currentUrl}?tree_id=${arbol.id}#map`;
     const popupContent = `
       <div class="popup-header">
-        <i class="fas fa-tree"></i>
-        <h3>${arbol.especie}</h3>
-      </div>
+  
+  <div style="width: 100%;">
+    <div style="font-size: 0.6rem; color: #482e83; font-weight: 400; margin-bottom: 2px;"><strong>Nombre Científico</strong></div>
+    <h3 style="margin: 0;">${arbol.especie}</h3>
+  </div>
+</div>
       
       <img src="${arbol.fotoUrl}" alt="Foto del árbol" class="popup-image">
 
@@ -1207,6 +1216,10 @@ map.on('load', function() {
       <div class="popup-info">
         <i class="fas fa-shield-alt"></i>
         <strong>Estado:</strong> ${arbol.estado}
+      </div>
+      <div class="popup-info">
+        <i class="fas fa-shield-alt"></i>
+        <strong>Código de árbol:</strong> ${arbol.codigo_arbol}
       </div>
       
       ${arbol.estado_fitosanitario ? `
