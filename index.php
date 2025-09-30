@@ -600,7 +600,7 @@ $conn->close();
     }
 
     .popup-info {
-      font-size: 0.6rem;
+      font-size: 0.7rem;
       line-height: 1.5;
       margin-bottom: 0.1rem;
       display: flex;
@@ -711,6 +711,166 @@ $conn->close();
       width: 90%;
       height: 650px;
     }
+
+    /* Ajustes generales del popup */
+  .mapboxgl-popup {
+    max-width: 85vw !important;
+  }
+
+  .mapboxgl-popup-content {
+    border-radius: 12px;
+    padding: 0.8rem !important;
+    max-width: 85vw !important;
+    font-size: 0.85rem;
+  }
+
+  /* Header del popup más compacto */
+  .popup-header {
+    margin-bottom: 0.6rem;
+    padding-bottom: 0.5rem;
+    gap: 0.3rem;
+  }
+
+  .popup-header i {
+    font-size: 1.2rem;
+  }
+
+  .popup-header h3 {
+    font-size: 0.95rem;
+  }
+
+  .popup-header div[style*="font-size: 0.6rem"] {
+    font-size: 0.55rem !important;
+  }
+
+  /* Imagen más pequeña */
+  .popup-image {
+    height: 120px;
+    margin-bottom: 0.6rem;
+    border-radius: 8px;
+  }
+
+  /* Info más compacta */
+  .popup-info {
+    font-size: 0.75rem;
+    line-height: 1.4;
+    margin-bottom: 0.4rem;
+  }
+
+  .popup-info i {
+    width: 16px;
+    margin-right: 6px;
+    font-size: 0.75rem;
+  }
+
+  /* Botón fitosanitario más pequeño */
+  .btn-fitosanitario {
+    padding: 0.5rem 1rem;
+    font-size: 0.7rem;
+    border-radius: 20px;
+    margin-top: 0.3rem;
+  }
+
+  /* Botón PDF más compacto */
+  .pdf-button {
+    padding: 0.5rem 1.5rem;
+    font-size: 0.75rem;
+    border-radius: 15px;
+  }
+
+  .pdf-container {
+    margin: 0.6rem 0;
+  }
+
+  /* QR code más pequeño */
+  .qr-code {
+    width: 60px;
+    height: 60px;
+    margin: 0.6rem auto 0;
+  }
+
+  /* Botón de cerrar más accesible */
+  .mapboxgl-popup-close-button {
+    font-size: 20px;
+    padding: 8px;
+    width: 32px;
+    height: 32px;
+    line-height: 1;
+  }
+
+  /* Ajustar el tip (triangulito) del popup */
+  .mapboxgl-popup-tip {
+    border-width: 8px;
+  }
+
+  /* Modal fitosanitario en móvil */
+  .modal-fitosanitario {
+    max-width: 95%;
+    max-height: 85vh;
+    margin: 0 0.5rem;
+  }
+  
+  .modal-header {
+    padding: 1rem 1.2rem;
+  }
+
+  .modal-header h3 {
+    font-size: 1.1rem;
+  }
+  
+  .modal-body {
+    padding: 1rem;
+  }
+
+  .fitosanitario-content {
+    padding: 1rem;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+
+  /* Ajustar separación del contenido */
+  .popup-info[style*="display: block"] {
+    margin-top: 0.3rem;
+  }
+}
+
+/* Para pantallas muy pequeñas (320px - 480px) */
+@media (max-width: 480px) {
+  .mapboxgl-popup {
+    max-width: 90vw !important;
+  }
+
+  .mapboxgl-popup-content {
+    padding: 0.7rem !important;
+    font-size: 0.8rem;
+  }
+
+  .popup-header h3 {
+    font-size: 0.85rem;
+  }
+
+  .popup-image {
+    height: 100px;
+  }
+
+  .popup-info {
+    font-size: 0.7rem;
+  }
+
+  .btn-fitosanitario {
+    padding: 0.45rem 0.8rem;
+    font-size: 0.65rem;
+  }
+
+  .pdf-button {
+    padding: 0.45rem 1.2rem;
+    font-size: 0.7rem;
+  }
+
+  .qr-code {
+    width: 60px;
+    height: 60px;
+  }
     }
 
     /* Scroll behavior */

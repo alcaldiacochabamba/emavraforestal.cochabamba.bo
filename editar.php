@@ -8,7 +8,7 @@ ini_set('upload_max_filesize', '15M');
 ini_set('post_max_size', '20M');
 
 // Crear directorios si no existen
-$directories = ['uploads/trees', 'uploads/pdfs'];
+$directories = ['uploads/trees', 'uploads/pdfs', 'exports'];
 foreach ($directories as $dir) {
     if (!is_dir($dir)) {
         mkdir($dir, 0777, true);
@@ -21,6 +21,297 @@ if ($conn->connect_error) {
     die("Error de conexión: " . $conn->connect_error);
 }
 $conn->query("SET time_zone = '-04:00'");
+
+// ===============================================
+// EXPORTAR DATOS
+// ===============================================
+if (isset($_GET['export'])) {
+    $format = $_GET['export'];
+    
+    // Obtener todos los árboles
+    $result = $conn->query("SELECT * FROM arboles ORDER BY id ASC");
+    $data = [];
+    while ($row = $result->fetch_assoc()) {
+        $data[] = $row;
+    }
+    
+    switch($format) {
+        case 'zip':
+            // Crear archivo comprimido usando TAR (disponible en todos los servidores)
+            $timestamp = date('Y-m-d_His');
+            $tempDir = 'exports/temp_' . $timestamp;
+            $archivoFinal = 'arboles_completo_' . $timestamp . '.tar.gz';
+            $archivoPath = 'exports/' . $archivoFinal;
+            
+            // Crear directorio temporal
+            if (!is_dir($tempDir)) {
+                mkdir($tempDir, 0777, true);
+            }
+            
+            // Crear subdirectorios
+            mkdir($tempDir . '/fotos', 0777, true);
+            mkdir($tempDir . '/pdfs', 0777, true);
+            mkdir($tempDir . '/qrcodes', 0777, true);
+            
+            // Crear CSV
+            $csvFile = fopen($tempDir . '/datos_arboles.csv', 'w');
+            fprintf($csvFile, chr(0xEF).chr(0xBB).chr(0xBF)); // BOM
+            if (!empty($data)) {
+                fputcsv($csvFile, array_keys($data[0]));
+                foreach ($data as $row) {
+                    fputcsv($csvFile, $row);
+                }
+            }
+            fclose($csvFile);
+            
+            // Crear JSON
+            file_put_contents(
+                $tempDir . '/datos_arboles.json',
+                json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
+            );
+            
+            // Contadores
+            $fotosAgregadas = 0;
+            $pdfsAgregados = 0;
+            $qrsAgregados = 0;
+            
+            // Copiar archivos de cada árbol
+            foreach ($data as $arbol) {
+                $codigoSeguro = preg_replace('/[^a-zA-Z0-9_-]/', '_', $arbol['codigo_arbol']);
+                
+                // Copiar foto
+                if (!empty($arbol['fotoUrl']) && file_exists($arbol['fotoUrl'])) {
+                    $extension = pathinfo($arbol['fotoUrl'], PATHINFO_EXTENSION);
+                    $destino = $tempDir . '/fotos/' . $codigoSeguro . '_foto.' . $extension;
+                    if (copy($arbol['fotoUrl'], $destino)) {
+                        $fotosAgregadas++;
+                    }
+                }
+                
+                // Copiar PDF
+                if (!empty($arbol['pdfUrl']) && file_exists($arbol['pdfUrl'])) {
+                    $destino = $tempDir . '/pdfs/' . $codigoSeguro . '_info.pdf';
+                    if (copy($arbol['pdfUrl'], $destino)) {
+                        $pdfsAgregados++;
+                    }
+                }
+                
+                // Copiar QR
+                $qrPath = 'qrcodes/' . $arbol['id'] . '.png';
+                if (file_exists($qrPath)) {
+                    $destino = $tempDir . '/qrcodes/' . $codigoSeguro . '_qr.png';
+                    if (copy($qrPath, $destino)) {
+                        $qrsAgregados++;
+                    }
+                }
+            }
+            
+            // Crear README
+            $readme = "EXPORTACIÓN COMPLETA DE ÁRBOLES - EMAVRA\n";
+            $readme .= "=========================================\n\n";
+            $readme .= "Fecha de exportación: " . date('Y-m-d H:i:s') . "\n";
+            $readme .= "Total de árboles: " . count($data) . "\n";
+            $readme .= "Fotos incluidas: " . $fotosAgregadas . "\n";
+            $readme .= "PDFs incluidos: " . $pdfsAgregados . "\n";
+            $readme .= "Códigos QR incluidos: " . $qrsAgregados . "\n\n";
+            $readme .= "ESTRUCTURA DEL ARCHIVO:\n";
+            $readme .= "----------------------\n";
+            $readme .= "- datos_arboles.csv: Datos completos en formato CSV\n";
+            $readme .= "- datos_arboles.json: Datos completos en formato JSON\n";
+            $readme .= "- fotos/: Fotografías de los árboles\n";
+            $readme .= "- pdfs/: Documentos PDF informativos\n";
+            $readme .= "- qrcodes/: Códigos QR de cada árbol\n\n";
+            $readme .= "Los archivos están nombrados con el código del árbol para fácil identificación.\n";
+            $readme .= "\nNOTA: Este es un archivo TAR.GZ. Se puede abrir con:\n";
+            $readme .= "- Windows: 7-Zip, WinRAR, o Windows 11 nativo\n";
+            $readme .= "- Mac: Doble clic (soporte nativo)\n";
+            $readme .= "- Linux: tar -xzf nombre_archivo.tar.gz\n";
+            
+            file_put_contents($tempDir . '/LEEME.txt', $readme);
+            
+            // Crear archivo TAR.GZ usando comando del sistema
+            $currentDir = getcwd();
+            chdir('exports');
+            
+            $tempDirBasename = basename($tempDir);
+            $comando = "tar -czf " . escapeshellarg($archivoFinal) . " " . escapeshellarg($tempDirBasename) . " 2>&1";
+            exec($comando, $output, $returnCode);
+            
+            chdir($currentDir);
+            
+            // Función para limpiar directorios
+            function eliminarDirectorio($dir) {
+                if (!is_dir($dir)) return;
+                $files = array_diff(scandir($dir), ['.', '..']);
+                foreach ($files as $file) {
+                    $path = $dir . '/' . $file;
+                    is_dir($path) ? eliminarDirectorio($path) : unlink($path);
+                }
+                rmdir($dir);
+            }
+            
+            // Verificar si se creó el archivo
+            if (file_exists($archivoPath) && filesize($archivoPath) > 0) {
+                // Descargar el archivo
+                header('Content-Type: application/gzip');
+                header('Content-Disposition: attachment; filename="' . $archivoFinal . '"');
+                header('Content-Length: ' . filesize($archivoPath));
+                readfile($archivoPath);
+                
+                // Limpiar archivos temporales
+                eliminarDirectorio($tempDir);
+                unlink($archivoPath);
+                exit;
+            } else {
+                // Si falló, intentar crear ZIP manualmente con PHP puro
+                eliminarDirectorio($tempDir);
+                
+                // Último recurso: crear un archivo tar sin comprimir
+                $tarFile = 'exports/arboles_' . $timestamp . '.tar';
+                $tempDir2 = 'exports/temp2_' . $timestamp;
+                
+                if (!is_dir($tempDir2)) {
+                    mkdir($tempDir2, 0777, true);
+                    mkdir($tempDir2 . '/fotos', 0777, true);
+                    mkdir($tempDir2 . '/pdfs', 0777, true);
+                    mkdir($tempDir2 . '/qrcodes', 0777, true);
+                }
+                
+                // Recrear archivos
+                $csvFile = fopen($tempDir2 . '/datos_arboles.csv', 'w');
+                fprintf($csvFile, chr(0xEF).chr(0xBB).chr(0xBF));
+                if (!empty($data)) {
+                    fputcsv($csvFile, array_keys($data[0]));
+                    foreach ($data as $row) {
+                        fputcsv($csvFile, $row);
+                    }
+                }
+                fclose($csvFile);
+                
+                file_put_contents($tempDir2 . '/datos_arboles.json', json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+                file_put_contents($tempDir2 . '/LEEME.txt', $readme);
+                
+                foreach ($data as $arbol) {
+                    $codigoSeguro = preg_replace('/[^a-zA-Z0-9_-]/', '_', $arbol['codigo_arbol']);
+                    
+                    if (!empty($arbol['fotoUrl']) && file_exists($arbol['fotoUrl'])) {
+                        $extension = pathinfo($arbol['fotoUrl'], PATHINFO_EXTENSION);
+                        copy($arbol['fotoUrl'], $tempDir2 . '/fotos/' . $codigoSeguro . '_foto.' . $extension);
+                    }
+                    
+                    if (!empty($arbol['pdfUrl']) && file_exists($arbol['pdfUrl'])) {
+                        copy($arbol['pdfUrl'], $tempDir2 . '/pdfs/' . $codigoSeguro . '_info.pdf');
+                    }
+                    
+                    $qrPath = 'qrcodes/' . $arbol['id'] . '.png';
+                    if (file_exists($qrPath)) {
+                        copy($qrPath, $tempDir2 . '/qrcodes/' . $codigoSeguro . '_qr.png');
+                    }
+                }
+                
+                // Intentar tar sin comprimir
+                chdir('exports');
+                $comando = "tar -cf " . escapeshellarg(basename($tarFile)) . " " . escapeshellarg(basename($tempDir2)) . " 2>&1";
+                exec($comando, $output2, $returnCode2);
+                chdir($currentDir);
+                
+                if (file_exists($tarFile) && filesize($tarFile) > 0) {
+                    header('Content-Type: application/x-tar');
+                    header('Content-Disposition: attachment; filename="arboles_' . $timestamp . '.tar"');
+                    header('Content-Length: ' . filesize($tarFile));
+                    readfile($tarFile);
+                    
+                    eliminarDirectorio($tempDir2);
+                    unlink($tarFile);
+                    exit;
+                } else {
+                    eliminarDirectorio($tempDir2);
+                    die("Error: No se pudo crear el archivo comprimido. Por favor, contacta al administrador del sistema para habilitar 'tar' o 'zip'.");
+                }
+            }
+            break;
+            
+        case 'csv':
+            header('Content-Type: text/csv; charset=utf-8');
+            header('Content-Disposition: attachment; filename="arboles_' . date('Y-m-d_His') . '.csv"');
+            
+            $output = fopen('php://output', 'w');
+            
+            // BOM para UTF-8
+            fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
+            
+            // Encabezados
+            if (!empty($data)) {
+                fputcsv($output, array_keys($data[0]));
+                foreach ($data as $row) {
+                    fputcsv($output, $row);
+                }
+            }
+            fclose($output);
+            exit;
+            
+        case 'json':
+            header('Content-Type: application/json; charset=utf-8');
+            header('Content-Disposition: attachment; filename="arboles_' . date('Y-m-d_His') . '.json"');
+            
+            echo json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+            exit;
+            
+        case 'sql':
+            header('Content-Type: text/plain; charset=utf-8');
+            header('Content-Disposition: attachment; filename="arboles_backup_' . date('Y-m-d_His') . '.sql"');
+            
+            echo "-- Backup de la tabla arboles\n";
+            echo "-- Fecha: " . date('Y-m-d H:i:s') . "\n\n";
+            
+            // Estructura de la tabla
+            $create = $conn->query("SHOW CREATE TABLE arboles");
+            if ($row = $create->fetch_assoc()) {
+                echo $row['Create Table'] . ";\n\n";
+            }
+            
+            // Datos
+            foreach ($data as $row) {
+                $values = [];
+                foreach ($row as $value) {
+                    if ($value === null) {
+                        $values[] = 'NULL';
+                    } else {
+                        $values[] = "'" . $conn->real_escape_string($value) . "'";
+                    }
+                }
+                echo "INSERT INTO arboles VALUES (" . implode(', ', $values) . ");\n";
+            }
+            exit;
+            
+        case 'excel':
+            header('Content-Type: application/vnd.ms-excel; charset=utf-8');
+            header('Content-Disposition: attachment; filename="arboles_' . date('Y-m-d_His') . '.xls"');
+            
+            echo "\xEF\xBB\xBF"; // BOM
+            echo "<table border='1'>";
+            
+            // Encabezados
+            if (!empty($data)) {
+                echo "<tr>";
+                foreach (array_keys($data[0]) as $header) {
+                    echo "<th>" . htmlspecialchars($header) . "</th>";
+                }
+                echo "</tr>";
+                
+                // Datos
+                foreach ($data as $row) {
+                    echo "<tr>";
+                    foreach ($row as $cell) {
+                        echo "<td>" . htmlspecialchars($cell ?? '') . "</td>";
+                    }
+                    echo "</tr>";
+                }
+            }
+            echo "</table>";
+            exit;
+    }
+}
 
 // ===============================================
 // PROCESAR ACTUALIZACIÓN (POST)
@@ -68,13 +359,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $newName = 'img_' . time() . '_' . uniqid() . '.' . $ext;
                 $targetPath = 'uploads/trees/' . $newName;
                 
-                // Verificar directorio
                 if (!is_dir('uploads/trees')) {
                     mkdir('uploads/trees', 0777, true);
                 }
                 
                 if (move_uploaded_file($file['tmp_name'], $targetPath)) {
-                    // Eliminar foto anterior si existe
                     if (!empty($current['fotoUrl']) && file_exists($current['fotoUrl'])) {
                         unlink($current['fotoUrl']);
                     }
@@ -92,18 +381,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $file = $_FILES['pdf'];
             $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
             
-            // Validación mejorada del PDF
             if ($ext === 'pdf' && $file['size'] <= 10*1024*1024) {
                 $newName = 'pdf_' . time() . '_' . uniqid() . '.pdf';
                 $targetPath = 'uploads/pdfs/' . $newName;
                 
-                // Verificar directorio
                 if (!is_dir('uploads/pdfs')) {
                     mkdir('uploads/pdfs', 0777, true);
                 }
                 
                 if (move_uploaded_file($file['tmp_name'], $targetPath)) {
-                    // Eliminar PDF anterior si existe
                     if (!empty($current['pdfUrl']) && file_exists($current['pdfUrl'])) {
                         unlink($current['pdfUrl']);
                     }
@@ -141,8 +427,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if ($stmt->execute()) {
             $mensaje = "✓ Árbol actualizado exitosamente";
             $tipo_mensaje = "success";
-            
-            // Debug: verificar qué se guardó
             error_log("Actualización exitosa - PDF URL: " . ($pdfUrl ?? 'NULL'));
         } else {
             throw new Exception("Error al actualizar: " . $stmt->error);
@@ -210,8 +494,57 @@ if (!isset($arbol_seleccionado)) {
             border-radius: 8px;
             margin-bottom: 20px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
         }
-        .header h1 { color: #333; font-size: 24px; }
+        .header-left { flex: 1; }
+        .header h1 { color: #333; font-size: 24px; margin-bottom: 5px; }
+        
+        .export-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .btn-export {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+            color: white;
+        }
+        
+        .btn-zip {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        .btn-zip:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
+        }
+        
+        .btn-csv { background: #28a745; }
+        .btn-csv:hover { background: #218838; transform: translateY(-2px); }
+        
+        .btn-json { background: #17a2b8; }
+        .btn-json:hover { background: #138496; transform: translateY(-2px); }
+        
+        .btn-sql { background: #fd7e14; }
+        .btn-sql:hover { background: #e8590c; transform: translateY(-2px); }
+        
+        .btn-excel { background: #20c997; }
+        .btn-excel:hover { background: #1ba87e; transform: translateY(-2px); }
         
         .mensaje {
             padding: 15px;
@@ -333,14 +666,37 @@ if (!isset($arbol_seleccionado)) {
         
         @media (max-width: 768px) {
             .grid { grid-template-columns: 1fr; }
+            .header { flex-direction: column; align-items: flex-start; }
+            .export-buttons { width: 100%; }
+            .btn-export { flex: 1; justify-content: center; }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1><i class="fas fa-edit"></i> Editor de Árboles Registrados</h1>
-            <p style="color: #666; margin-top: 8px;">Selecciona un árbol de la lista para editar sus datos</p>
+            <div class="header-left">
+                <h1><i class="fas fa-edit"></i> Editor de Árboles Registrados</h1>
+                <p style="color: #666; margin-top: 8px;">Selecciona un árbol de la lista para editar sus datos</p>
+            </div>
+            
+            <div class="export-buttons">
+                <a href="?export=zip" class="btn-export btn-zip" title="Exportación completa con todos los archivos">
+                    <i class="fas fa-file-archive"></i> ZIP Completo
+                </a>
+                <a href="?export=csv" class="btn-export btn-csv" title="Exportar a CSV">
+                    <i class="fas fa-file-csv"></i> CSV
+                </a>
+                <a href="?export=json" class="btn-export btn-json" title="Exportar a JSON">
+                    <i class="fas fa-file-code"></i> JSON
+                </a>
+                <a href="?export=sql" class="btn-export btn-sql" title="Backup SQL">
+                    <i class="fas fa-database"></i> SQL
+                </a>
+                <a href="?export=excel" class="btn-export btn-excel" title="Exportar a Excel">
+                    <i class="fas fa-file-excel"></i> Excel
+                </a>
+            </div>
         </div>
         
         <?php if (isset($mensaje)): ?>
