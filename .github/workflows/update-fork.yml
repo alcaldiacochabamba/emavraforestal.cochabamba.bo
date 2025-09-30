@@ -1,0 +1,109 @@
+name: Actualizar Fork - EMAVRA Forestal
+
+on:
+  schedule:
+    # Ejecutar todos los días a las 8:00 AM UTC
+    - cron: '0 8 * * *'
+  workflow_dispatch:  # Permite ejecución manual
+    inputs:
+      branch_name:
+        description: 'Nombre de la rama a actualizar'
+        required: false
+        default: 'dev'
+        type: string
+
+jobs:
+  sync-with-upstream:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout código - emavraforestal
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+        ref: dev
+
+    - name: Configurar Git
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+
+    - name: Agregar upstream remote
+      run: |
+        # IMPORTANTE: Reemplaza con el URL del repositorio ORIGINAL
+        # Si no sabes el original, déjalo así y configúralo después
+        git remote add upstream https://github.com/gobierno-autonomo-cochabamba/emavra-forestal.git || echo "Upstream ya existe"
+        
+    - name: Obtener cambios del upstream
+      run: |
+        git fetch upstream
+
+    - name: Determinar rama objetivo
+      id: set_branch
+      run: |
+        if [ "${{ github.event.inputs.branch_name }}" != "" ]; then
+          echo "TARGET_BRANCH=${{ github.event.inputs.branch_name }}" >> $GITHUB_ENV
+        else
+          echo "TARGET_BRANCH=dev" >> $GITHUB_ENV
+        fi
+        echo "🎯 Rama objetivo: $TARGET_BRANCH"
+
+    - name: Verificar cambios disponibles
+      id: check_changes
+      run: |
+        git checkout ${{ env.TARGET_BRANCH }}
+        if git log HEAD..upstream/${{ env.TARGET_BRANCH }} --oneline | grep -q .; then
+          echo "🔄 Hay cambios nuevos disponibles"
+          echo "has_new_changes=true" >> $GITHUB_OUTPUT
+          
+          # Mostrar los commits que vendrán
+          echo "📋 Commits pendientes:"
+          git log HEAD..upstream/${{ env.TARGET_BRANCH }} --oneline
+        else
+          echo "✅ No hay cambios nuevos"
+          echo "has_new_changes=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Actualizar rama con cambios nuevos
+      if: steps.check_changes.outputs.has_new_changes == 'true'
+      run: |
+        echo "🔄 Actualizando rama ${{ env.TARGET_BRANCH }}..."
+        
+        # Intentar merge automático
+        if git merge upstream/${{ env.TARGET_BRANCH }} --no-edit --no-ff; then
+          echo "✅ Merge exitoso"
+          echo "MERGE_RESULT=success" >> $GITHUB_ENV
+        else
+          echo "❌ Hay conflictos de merge"
+          echo "MERGE_RESULT=conflict" >> $GITHUB_ENV
+          git merge --abort
+        fi
+
+    - name: Subir cambios al fork
+      if: steps.check_changes.outputs.has_new_changes == 'true' && env.MERGE_RESULT == 'success'
+      run: |
+        git push origin ${{ env.TARGET_BRANCH }}
+        echo "🎉 ¡Rama ${{ env.TARGET_BRANCH }} actualizada exitosamente!"
+
+    - name: Crear issue si hay conflictos
+      if: steps.check_changes.outputs.has_new_changes == 'true' && env.MERGE_RESULT == 'conflict'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: '🚨 Conflictos detectados al actualizar fork',
+            body: `Se detectaron conflictos al intentar actualizar la rama **${{ env.TARGET_BRANCH }}** desde el repositorio upstream.\n\n**Por favor, actualiza manualmente el fork.**\n\n- Repositorio: ${{ github.repository }}\n- Rama: ${{ env.TARGET_BRANCH }}\n- Ejecución: ${{ github.run_id }}`
+          })
+
+    - name: Mostrar resumen
+      run: |
+        echo "📊 RESUMEN DE EJECUCIÓN:"
+        echo "────────────────────────────"
+        echo "📁 Repositorio: ${{ github.repository }}"
+        echo "🌿 Rama: ${{ env.TARGET_BRANCH }}"
+        echo "🔄 Cambios nuevos: ${{ steps.check_changes.outputs.has_new_changes }}"
+        echo "✅ Resultado merge: ${{ env.MERGE_RESULT || 'N/A' }}"
+        echo "────────────────────────────"
