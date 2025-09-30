@@ -1705,10 +1705,10 @@ document.getElementById('foto').addEventListener('change', function(e) {
                 // Color según estado
                 switch (arbol.estado.toLowerCase()) {
                     case 'exótico':
-                        el.style.border = '3px solid rgb(229, 255, 0)';
+                        el.style.border = '3px solid rgba(84, 14, 205, 1)';
                         break;
                     case 'nativo':
-                        el.style.border = '3px solid #2ed573';
+                        el.style.border = '3px solid #00b1beff';
                         break;
                     default:
                         el.style.border = '3px solid #57606f';

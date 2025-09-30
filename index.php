@@ -72,20 +72,35 @@ $conn->close();
     }
 
     .logo {
-      display: flex;
-      align-items: center;
-      font-size: 1.8rem;
-      font-weight: bold;
-      color: #333;
-      text-decoration: none;
-      font-family: 'Arciform', 'Poppins', sans-serif;
-    }
+  display: flex;
+  align-items: center;
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #333;
+  text-decoration: none;
+  font-family: 'Arciform', 'Poppins', sans-serif;
+  gap: 1rem;
+}
 
-    .logo i {
-      margin-right: 0.5rem;
-      color: #3ebeab;
-      font-size: 2rem;
-    }
+.logo i {
+  margin-right: 3.5rem;
+  color: #3ebeab;
+  font-size: 2rem;
+}
+
+.logo-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-left: 2.5rem; 
+}
+
+.logo-title {
+  font-size: 0.9rem;
+  color: #482e83;
+  font-weight: 500;
+  line-height: 1.2;
+}
 
     .nav-links {
       display: flex;
@@ -347,9 +362,9 @@ $conn->close();
     }
 
     #map {
-      width: calc(90% - 3rem);
-      height: 650px;
-      border-radius: 15px;
+      width: 90%;
+  height: 90vh;
+  border-radius: 15px;
       margin: 0 auto;
       
 
@@ -393,8 +408,8 @@ $conn->close();
     }
 
     .legend-icon.protected { background: #ff4757; border-color: #ff4757; }
-    .legend-icon.native { background: #2ed573; border-color: #2ed573; }
-    .legend-icon.dangerous { background: #ffa502; border-color: #ffa502; }
+    .legend-icon.native { background: #00ae80ff; border-color: #00ae80ff; }
+    .legend-icon.dangerous { background: #482e83; border-color: #482e83; }
 
     
     /* Honor Wall */
@@ -560,7 +575,12 @@ $conn->close();
       font-family: 'Poppins', sans-serif;
       background: white;
     }
-
+.mapboxgl-popup-tip {
+  border-top-color: rgba(255, 255, 255, 0) !important;
+  border-bottom-color: rgba(255, 255, 255, 0) !important;
+  border-left-color: rgba(255, 255, 255, 0) !important;
+  border-right-color: #482e83 !important;
+}
     .mapboxgl-popup-close-button {
       color: #482e83;
       font-size: 18px;
@@ -623,6 +643,7 @@ $conn->close();
       text-align: center;
       margin: 1rem 0;
     }
+    
 
     .pdf-button {
       background: linear-gradient(135deg, #482e83, #685ca8);
@@ -710,6 +731,7 @@ $conn->close();
     #map {
       width: 90%;
       height: 650px;
+      border-radius: 8px;
     }
 
     /* Ajustes generales del popup */
@@ -871,13 +893,20 @@ $conn->close();
     width: 60px;
     height: 60px;
   }
-    }
+  .logo-img {
+  height: 40px;
+}
+
+.logo-title {
+  font-size: 0.75rem;
+}
+}
 
     /* Scroll behavior */
     html {
       scroll-behavior: smooth;
     }
-    .logo-img {
+.logo-img {
   height: 50px;   /* ajusta el tamaño del logo */
   width: auto;    /* mantiene la proporción */
   vertical-align: middle; /* lo alinea con el menú */
@@ -1051,6 +1080,9 @@ $conn->close();
     <nav class="nav">
       <a href="#home" class="logo">
         <img src="img/logoemavrita.png" alt="Emavra Logo" class="logo-img">
+        <div class="logo-text">
+    <span class="logo-title">Cap. Manfred Reyes Villa</span>
+  </div>
       </a>
       <ul class="nav-links">
         <li><a href="#about">¿Qué hacemos?</a></li>
@@ -1067,7 +1099,7 @@ $conn->close();
   <div class="hero-content">
     
     
-    <h1>Bienvenido a Emavra</h1>
+    <h1>Bienvenido a S.I.F</h1>
     <!-- Círculo con imagen -->
     <div class="hero-image-circle">
       <img src="img/emavraini.jpg" alt="Emavra">
@@ -1152,7 +1184,7 @@ $conn->close();
       <div class="map-container">
         <div id="map"></div>
         <div class="map-legend">
-          <h4><i class="fas fa-info-circle"></i> Categorías</h4>
+          <h4><i class="fas fa-info-circle"></i> Origen</h4>
         
           <div class="legend-item">
             <span class="legend-icon native"></span>
@@ -1307,7 +1339,15 @@ const map = new mapboxgl.Map({
   center: isFromQR ? [-66.156977, -17.390838] : [-66.156977, -17.393838], // Más alejado si es QR
   zoom: isFromQR ? 14 : 17, // Zoom out si es QR
   pitch: 0,
-  bearing: isFromQR ? 0 : -17.6 // Sin rotación si es QR
+  bearing: isFromQR ? 0 : -17.6, // Sin rotación si es QR
+
+  touchZoomRotate: true,    // Zoom y rotación con dos dedos
+  touchPitch: true,          // Inclinación con tres dedos
+  dragRotate: true,          // Rotación con clic derecho/dos dedos
+  dragPan: true,             // Arrastre del mapa
+  scrollZoom: true,          // Zoom con scroll/pellizco
+  doubleClickZoom: true,     // Zoom con doble clic/tap
+  keyboard: true  
 });
 
 map.on('load', function() {
@@ -1329,10 +1369,10 @@ map.on('load', function() {
     // Set border color based on tree state
     switch (arbol.estado.toLowerCase()) {
       case 'exótico':
-        el.style.border = '3px solid #ffa502';
+        el.style.border = '3px solid #482e83';
         break;
       case 'nativo':
-        el.style.border = '3px solid #2ed573';
+        el.style.border = '3px solid #00ae80ff';
         break;
       default:
         el.style.border = '3px solid #57606f';
@@ -1353,12 +1393,12 @@ map.on('load', function() {
       <img src="${arbol.fotoUrl}" alt="Foto del árbol" class="popup-image">
 
       <div class="popup-info">
-        <i class="fas fa-circle"></i>
+        <i class="fas fa-leaf"></i>
         <strong>Nombre común:</strong> ${arbol.nombre_comun}
       </div>
       
       <div class="popup-info">
-        <i class="fas fa-calendar"></i>
+        <i class="fas fa-calendar-alt"></i>
         <strong>Edad:</strong> ${arbol.edad} años
       </div>
       
@@ -1372,11 +1412,11 @@ map.on('load', function() {
         <strong>Diámetro:</strong> ${arbol.diametroTronco} cm
       </div>
       <div class="popup-info">
-        <i class="fas fa-shield-alt"></i>
-        <strong>Estado:</strong> ${arbol.estado}
+        <i class="fas fa-globe-americas"></i>
+        <strong>Origen:</strong> ${arbol.estado}
       </div>
       <div class="popup-info">
-        <i class="fas fa-shield-alt"></i>
+        <i class="fas fa-barcode"></i>
         <strong>Código de árbol:</strong> ${arbol.codigo_arbol}
       </div>
       
@@ -1423,9 +1463,10 @@ map.on('load', function() {
       map.flyTo({
         center: [lng + 0.00015, lat],
         zoom: 19,
-        pitch: 0,
-        bearing: 0,
-        essential: true,
+         pitch: 0,
+  bearing: 0,
+  dragRotate: true,   // permite rotar con dos dedos
+  touchZoomRotate: true, // permite zoom + rotación con gestos
         duration: 800
       });
       
@@ -1479,9 +1520,10 @@ function openTreePopup(treeId) {
     map.flyTo({
       center: adjustedCoordinates,
       zoom: 17,
-      pitch: 0,
-      bearing: 0,
-      essential: true,
+       pitch: 0,
+  bearing: 0,
+  dragRotate: true,   // permite rotar con dos dedos
+  touchZoomRotate: true, // permite zoom + rotación con gestos
       duration: 2500, // Animación más larga para QR
       easing: function(t) {
         // Easing más suave con ease-in-out
