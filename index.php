@@ -1074,8 +1074,6 @@ $conn->close();
     </div>
     <p class="hero-subtitle">
       Transformamos Cochabamba construyendo un futuro más verde y sostenible. 
-      Nuestra plataforma web ambiental conecta la comunidad con la naturaleza 
-      en colaboración con la Empresa Municipal de Áreas Verdes.
     </p>
     
     <div class="hero-buttons">
@@ -1423,7 +1421,7 @@ map.on('load', function() {
     el.addEventListener('click', () => {
       // Fly to marker with smooth animation
       map.flyTo({
-        center: [lng + 0.0002, lat],
+        center: [lng + 0.00015, lat],
         zoom: 19,
         pitch: 0,
         bearing: 0,
@@ -1473,7 +1471,7 @@ function openTreePopup(treeId) {
   if (targetMarker) {
     // Ajustar las coordenadas para centrar mejor
     const adjustedCoordinates = [
-      targetMarker.coordinates[0] + 0.0008,
+      targetMarker.coordinates[0] + 0.0006,
       targetMarker.coordinates[1] - 0.0000
     ];
     
