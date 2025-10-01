@@ -354,11 +354,11 @@ $conn->close();
     .map-container {
       background: white;
       border-radius: 20px;
-      padding: 3rem;
+     padding: 2rem; /* REDUCIR padding */
       box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
       
       position: relative;
-      max-width: 900px;
+      max-width: 100%; /* CAMBIAR de 900px a 100% */
       margin: 0 auto;
     }
 
@@ -367,10 +367,20 @@ $conn->close();
   height: 90vh;
   border-radius: 15px;
       margin: 0 auto;
+      touch-action: none; /* CRÍTICO para controles táctiles */
+      
       
 
     }
+/* Solución definitiva para navegación táctil */
+.mapboxgl-canvas-container {
+  touch-action: none !important;
+}
 
+.mapboxgl-canvas {
+  touch-action: none !important;
+  outline: none;
+}
     .map-legend {
   position: absolute;
   bottom: 750px;/* Anclado a 50px de la parte superior del contenedor del mapa */
@@ -1380,7 +1390,14 @@ const map = new mapboxgl.Map({
 
 map.on('load', function() {
 
+  // Forzar que el mapa tome control total de eventos táctiles
+  const canvas = map.getCanvas();
+  canvas.style.touchAction = 'none';
   
+  // Habilitar controles manualmente
+  map.touchZoomRotate.enable();
+  map.dragPan.enable();
+  map.scrollZoom.enable();
   // Load all trees
   arboles.forEach(arbol => {
     const coordinates = arbol.coordenadas.replace('POINT(', '').replace(')', '').split(' ');
