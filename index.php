@@ -1368,16 +1368,19 @@ const map = new mapboxgl.Map({
   pitch: 0,
   bearing: isFromQR ? 0 : -17.6, // Sin rotación si es QR
 
-  touchZoomRotate: true,    // Zoom y rotación con dos dedos
-  touchPitch: true,          // Inclinación con tres dedos
-  dragRotate: true,          // Rotación con clic derecho/dos dedos
-  dragPan: true,             // Arrastre del mapa
-  scrollZoom: true,          // Zoom con scroll/pellizco
-  doubleClickZoom: true,     // Zoom con doble clic/tap
-  keyboard: true  
+  // Simplemente habilitar sin configuración adicional
+  touchZoomRotate: true,
+  touchPitch: true,
+  dragRotate: true,
+  dragPan: true,
+  scrollZoom: true, // ⬅️ SIN configuración, solo true
+  doubleClickZoom: true,
+  keyboard: true
 });
 
 map.on('load', function() {
+
+  
   // Load all trees
   arboles.forEach(arbol => {
     const coordinates = arbol.coordenadas.replace('POINT(', '').replace(')', '').split(' ');
@@ -1491,11 +1494,8 @@ map.on('load', function() {
       map.flyTo({
         center: [lng + 0.00018, lat],
         zoom: 19,
-         pitch: 0,
-  bearing: 0,
-  dragRotate: true,   // permite rotar con dos dedos
-  touchZoomRotate: true, // permite zoom + rotación con gestos
-        duration: 800
+        duration: 800,
+        
       });
       
       // Open popup after animation
@@ -1540,7 +1540,7 @@ function openTreePopup(treeId) {
   if (targetMarker) {
     // Ajustar las coordenadas para centrar mejor
     const adjustedCoordinates = [
-      targetMarker.coordinates[0] + 0.0006,
+      targetMarker.coordinates[0] + 0.0008,
       targetMarker.coordinates[1] - 0.0000
     ];
     
@@ -1548,10 +1548,8 @@ function openTreePopup(treeId) {
     map.flyTo({
       center: adjustedCoordinates,
       zoom: 17,
-       pitch: 0,
-  bearing: 0,
-  dragRotate: true,   // permite rotar con dos dedos
-  touchZoomRotate: true, // permite zoom + rotación con gestos
+      
+      
       duration: 2500, // Animación más larga para QR
       easing: function(t) {
         // Easing más suave con ease-in-out
