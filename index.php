@@ -796,8 +796,8 @@ $conn->close();
 
   /* Botón PDF más compacto */
   .pdf-button {
-    padding: 0.5rem 1.5rem;
-    font-size: 0.75rem;
+    padding: 0.5rem 3.5rem;
+    font-size: 0.7rem;
     border-radius: 15px;
   }
 
