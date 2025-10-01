@@ -1436,7 +1436,7 @@ map.on('load', function() {
       
       <div class="popup-info">
         <i class="fas fa-circle"></i>
-        <strong>Perímetro De Tronco:</strong> ${arbol.diametroTronco} cm
+        <strong>Circunferencia Altura Pecho:</strong> ${arbol.diametroTronco} cm
       </div>
       
       <div class="popup-info">
@@ -1489,7 +1489,7 @@ map.on('load', function() {
     el.addEventListener('click', () => {
       // Fly to marker with smooth animation
       map.flyTo({
-        center: [lng + 0.00015, lat],
+        center: [lng + 0.00018, lat],
         zoom: 19,
          pitch: 0,
   bearing: 0,
