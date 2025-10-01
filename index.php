@@ -1422,7 +1422,7 @@ $conn->close();
      
       if (targetMarker) {
         const adjustedCoordinates = [
-          targetMarker.coordinates[0] + 0.0008,
+          targetMarker.coordinates[0] + 0.0009,
           targetMarker.coordinates[1] - 0.0000
         ];
         
