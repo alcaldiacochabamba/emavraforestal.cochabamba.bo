@@ -1140,7 +1140,7 @@ $conn->close();
         <div class="honor-card">
           <img src="img/volun.jpg" alt="Voluntario 1" class="honor-avatar">
           <h3 class="honor-name">Defensores ambientales</h3>
-          <p class="honor-contribution">🌿 Grupo de voluntarios que son parte de la reforestación</p>
+          <p class="honor-contribution">🌿 Grupo de voluntarios que son parte de la reforestación.</p>
         </div>
 
         <div class="honor-card">
