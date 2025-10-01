@@ -1381,7 +1381,7 @@ $conn->close();
 
         marker.getElement().addEventListener('click', () => {
           map.flyTo({
-            center: [lng + 0.00018, lat],
+            center: [lng + 0.00022, lat],
             zoom: 19,
             duration: 800
           });
