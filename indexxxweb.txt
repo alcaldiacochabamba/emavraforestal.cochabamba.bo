@@ -21,8 +21,6 @@ $conn->close();
 // Para verificar que funciona correctamente, puedes descomentar la siguiente línea:
 // print_r($arboles);
 ?>
-
-
 <!DOCTYPE html>
 <html lang="es">
 
@@ -653,28 +651,25 @@ $conn->close();
     }
 
     .pdf-container {
-  text-align: center;
-  margin: 1rem 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
+      text-align: center;
+      margin: 1rem 0;
+    }
     
 
     .pdf-button {
-  background: linear-gradient(135deg, #482e83, #685ca8);
-  color: white;
-  padding: 0.6rem 1.5rem;
-  border-radius: 20px;
-  text-decoration: none;
-  font-size: 0.7rem;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  justify-content: center;
-}
+      background: linear-gradient(135deg, #482e83, #685ca8);
+      color: white;
+      padding: 0.6rem 3.6rem;
+      border-radius: 20px;
+      text-decoration: none;
+      font-size: 0.7rem;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      
+    }
 
     .pdf-button:hover {
       transform: translateY(-2px);
@@ -752,23 +747,14 @@ $conn->close();
 
     /* Ajustes generales del popup */
   .mapboxgl-popup {
-    max-width: 90vw !important;
+    max-width: 85vw !important;
   }
 
   .mapboxgl-popup-content {
     border-radius: 12px;
     padding: 0.8rem !important;
-    max-width: 280px !important;
+    max-width: 85vw !important;
     font-size: 0.85rem;
-    margin: 0 !important;
-  }
-
-  /* Forzar posicionamiento correcto del popup */
-  .mapboxgl-popup-anchor-left .mapboxgl-popup-content,
-  .mapboxgl-popup-anchor-right .mapboxgl-popup-content,
-  .mapboxgl-popup-anchor-top .mapboxgl-popup-content,
-  .mapboxgl-popup-anchor-bottom .mapboxgl-popup-content {
-    max-width: 280px !important;
   }
 
   /* Header del popup más compacto */
@@ -792,11 +778,9 @@ $conn->close();
 
   /* Imagen más pequeña */
   .popup-image {
-    height: 140px;
-    margin-bottom: 0.7rem;
+    height: 120px;
+    margin-bottom: 0.6rem;
     border-radius: 8px;
-    width: 100%;
-    object-fit: cover;
   }
 
   /* Info más compacta */
@@ -825,16 +809,12 @@ $conn->close();
     padding: 0.5rem 1.5rem;
     font-size: 0.7rem;
     border-radius: 15px;
-    width: auto;
   }
 
   .pdf-container {
     margin: 0.6rem 0;
-    display: flex;
-    justify-content: center;
-    width: 100%;
+    
   }
-  
 
   /* QR code más pequeño */
   .qr-code {
@@ -994,8 +974,8 @@ $conn->close();
 .modal-header h3 {
   margin: 0;
   font-size: 1.4rem;
-  font-weight: 500
-  }
+  font-weight: 500;
+}
 
 .modal-close {
   position: absolute;
@@ -1390,23 +1370,21 @@ function getURLParameter(name) {
 const treeId = getURLParameter('tree_id');
 const isFromQR = treeId !== null;
 
-// Determinar el maxWidth según el dispositivo
-const isMobile = window.innerWidth <= 768;
-const popupMaxWidth = isMobile ? '280px' : '350px';
-
 // Si viene de QR, iniciar el mapa más alejado para ver la animación
 const map = new mapboxgl.Map({
   container: 'map',
   style: 'mapbox://styles/mapbox/outdoors-v11',
-  center: isFromQR ? [-66.156977, -17.390838] : [-66.156977, -17.393838],
-  zoom: isFromQR ? 14 : 17,
+  center: isFromQR ? [-66.156977, -17.390838] : [-66.156977, -17.393838], // Más alejado si es QR
+  zoom: isFromQR ? 14 : 17, // Zoom out si es QR
   pitch: 0,
-  bearing: isFromQR ? 0 : -17.6,
+  bearing: isFromQR ? 0 : -17.6, // Sin rotación si es QR
+
+  // Simplemente habilitar sin configuración adicional
   touchZoomRotate: true,
   touchPitch: true,
   dragRotate: true,
   dragPan: true,
-  scrollZoom: true,
+  scrollZoom: true, // ⬅️ SIN configuración, solo true
   doubleClickZoom: true,
   keyboard: true
 });
@@ -1421,7 +1399,6 @@ map.on('load', function() {
   map.touchZoomRotate.enable();
   map.dragPan.enable();
   map.scrollZoom.enable();
-  
   // Load all trees
   arboles.forEach(arbol => {
     const coordinates = arbol.coordenadas.replace('POINT(', '').replace(')', '').split(' ');
@@ -1514,13 +1491,13 @@ map.on('load', function() {
       </div>
     `;
 
-    // Create popup con maxWidth dinámico
+    // Create popup
     const popup = new mapboxgl.Popup({
       offset: 12,
       anchor: "left",
       closeButton: true,
       closeOnClick: false,
-      maxWidth: popupMaxWidth
+      maxWidth: '350px'
     }).setHTML(popupContent);
 
     // Create marker
@@ -1591,8 +1568,9 @@ function openTreePopup(treeId) {
       zoom: 17,
       
       
-      duration: 2500,
+      duration: 2500, // Animación más larga para QR
       easing: function(t) {
+        // Easing más suave con ease-in-out
         return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
       }
     });
