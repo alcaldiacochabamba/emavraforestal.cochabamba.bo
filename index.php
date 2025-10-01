@@ -4,7 +4,6 @@ if ($conn->connect_error) {
     die("Error de conexión: " . $conn->connect_error);
 }
 
-// Consulta completa con todos los campos y funciones SQL apropiadas
 $sql = "SELECT id, especie, nombre_comun, edad, estado, fotoUrl, altura, diametroTronco, diametro_copa, codigo_arbol, ST_AsText(coordenadas) as coordenadas, latitud, longitud, propiedad, otb, nombre_area_verde, inspector, estado_fitosanitario, pdfUrl, qrUrl, DATE_FORMAT(fecha_registro, '%d/%m/%y') as fecha_formato, hora_registro FROM arboles";
 
 $result = $conn->query($sql);
@@ -17,15 +16,10 @@ if ($result->num_rows > 0) {
 }
 
 $conn->close();
-
-// Para verificar que funciona correctamente, puedes descomentar la siguiente línea:
-// print_r($arboles);
 ?>
-
 
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -50,7 +44,6 @@ $conn->close();
       overflow-x: hidden;
     }
 
-    /* Header Styles */
     .header {
       background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(10px);
@@ -74,36 +67,35 @@ $conn->close();
     }
 
     .logo {
-  display: flex;
-  align-items: center;
-  font-size: 1.8rem;
-  font-weight: bold;
-  color: #333;
-  text-decoration: none;
-  font-family: 'Arciform', 'Poppins', sans-serif;
-  gap: 1rem;
-}
+      display: flex;
+      align-items: center;
+      font-size: 1.8rem;
+      font-weight: bold;
+      color: #333;
+      text-decoration: none;
+      font-family: 'Arciform', 'Poppins', sans-serif;
+      gap: 1rem;
+    }
 
-.logo i {
-  margin-right: 3.5rem;
-  color: #3ebeab;
-  font-size: 2rem;
-}
+    .logo i {
+      margin-right: 3.5rem;
+      color: #3ebeab;
+      font-size: 2rem;
+    }
 
-.logo-text {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  margin-left: 2.5rem; 
-}
+    .logo-text {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      margin-left: 2.5rem; 
+    }
 
-.logo-title {
-  font-size: 0.9rem;
-  color: #482e83;
-  font-weight: 500;
-  line-height: 1.2;
-  
-}
+    .logo-title {
+      font-size: 0.9rem;
+      color: #482e83;
+      font-weight: 500;
+      line-height: 1.2;
+    }
 
     .nav-links {
       display: flex;
@@ -143,33 +135,34 @@ $conn->close();
       transform: translateY(-2px);
       box-shadow: 0 5px 15px rgba(45, 80, 22, 0.3);
     }
-.hero-image-circle {
-  width: 150px;
-  height: 150px;
-  border-radius: 50%;
-  overflow: hidden;
-  margin: 0 auto 2.5rem;
-  border: 5px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  box-shadow: 
-    0 8px 32px rgba(0, 0, 0, 0.1),
-    inset 0 0 20px rgba(255, 255, 255, 0.1);
-  transition: all 0.3s ease;
-}
 
-.hero-image-circle:hover {
-  transform: scale(1.08) rotate(5deg);
-  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.15);
-}
+    .hero-image-circle {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      overflow: hidden;
+      margin: 0 auto 2.5rem;
+      border: 5px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.1),
+        inset 0 0 20px rgba(255, 255, 255, 0.1);
+      transition: all 0.3s ease;
+    }
 
-.hero-image-circle img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-    /* Hero Section */
+    .hero-image-circle:hover {
+      transform: scale(1.08) rotate(5deg);
+      box-shadow: 0 12px 48px rgba(0, 0, 0, 0.15);
+    }
+
+    .hero-image-circle img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
     .hero {
       background: linear-gradient(135deg, #482e83 0%, #685ca8 100%);
       color: white;
@@ -266,7 +259,6 @@ $conn->close();
       transform: translateY(-3px);
     }
 
-    /* About Section */
     .about {
       padding: 60px 0;
       background: #f8f9fa;
@@ -345,58 +337,42 @@ $conn->close();
       line-height: 1.8;
     }
 
-    /* Map Section */
     .map-section {
       padding: 50px 0;
       background: white;
-      
-      
     }
 
     .map-container {
       background: white;
       border-radius: 20px;
-     padding: 2rem; /* REDUCIR padding */
+      padding: 2rem;
       box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-      
       position: relative;
-      max-width: 100%; /* CAMBIAR de 900px a 100% */
+      max-width: 100%;
       margin: 0 auto;
     }
 
     #map {
       width: 90%;
-  height: 90vh;
-  border-radius: 15px;
+      height: 90vh;
+      border-radius: 15px;
       margin: 0 auto;
-      touch-action: none; /* CRÍTICO para controles táctiles */
-      
-      
-
     }
-/* Solución definitiva para navegación táctil */
-.mapboxgl-canvas-container {
-  touch-action: none !important;
-}
 
-.mapboxgl-canvas {
-  touch-action: none !important;
-  outline: none;
-}
     .map-legend {
-  position: absolute;
-  bottom: 700px;/* Anclado a 50px de la parte superior del contenedor del mapa */
-  right: 1020px;/* Anclado a 50px de la parte derecha del contenedor del mapa */
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  padding: 1rem;
-  border-radius: 10px;
-  font-family: 'Poppins', sans-serif;
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
-  z-index: 100; /* Baja el z-index para que el Header (1000) siempre esté encima */
-  min-width: 160px;
-  font-size: 0.9rem;
-}
+      position: absolute;
+      bottom: 747px;
+      right: 1050px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 1rem;
+      border-radius: 10px;
+      font-family: 'Poppins', sans-serif;
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+      z-index: 100;
+      min-width: 160px;
+      font-size: 0.9rem;
+    }
 
     .map-legend h4 {
       margin: 0 0 0.8rem;
@@ -424,8 +400,6 @@ $conn->close();
     .legend-icon.native { background: #00ae80ff; border-color: #00ae80ff; }
     .legend-icon.dangerous { background: #482e83; border-color: #482e83; }
 
-    
-    /* Honor Wall */
     .honor-wall {
       padding: 50px 0;
       background: #f8f9fa;
@@ -473,7 +447,6 @@ $conn->close();
       font-weight: 500;
     }
 
-    /* Newsletter */
     .newsletter {
       padding: 80px 0;
       background: linear-gradient(135deg, #3ebeab, #3ebeab);
@@ -517,7 +490,6 @@ $conn->close();
       transform: translateY(-2px);
     }
 
-    /* Footer */
     .footer {
       background: #482e83;
       color: #ccc;
@@ -549,7 +521,6 @@ $conn->close();
       font-size: 0.9rem;
     }
 
-    /* Animations */
     @keyframes fadeInUp {
       from {
         opacity: 0;
@@ -561,39 +532,22 @@ $conn->close();
       }
     }
 
-    /* Tree Marker Styles */
-    .tree-marker {
-      background-image: url('https://cdn2.iconfinder.com/data/icons/miscellaneous-iii-glyph-style/150/tree-512.png');
-      background-size: cover;
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      cursor: pointer;
-      transition: transform 0.2s ease;
-      
-    }
-
-    .tree-marker:hover {
-      transform: scale(1.2);
-    }
-
-    /* Popup Styles */
     .mapboxgl-popup-content {
       border-radius: 15px;
       padding: 1.0rem;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
       max-width: 300px;
-      
-    
       font-family: 'Poppins', sans-serif;
       background: white;
     }
-.mapboxgl-popup-tip {
-  border-top-color: rgba(255, 255, 255, 0) !important;
-  border-bottom-color: rgba(255, 255, 255, 0) !important;
-  border-left-color: rgba(255, 255, 255, 0) !important;
-  border-right-color: #482e83 !important;
-}
+
+    .mapboxgl-popup-tip {
+      border-top-color: rgba(255, 255, 255, 0) !important;
+      border-bottom-color: rgba(255, 255, 255, 0) !important;
+      border-left-color: rgba(255, 255, 255, 0) !important;
+      border-right-color: #482e83 !important;
+    }
+
     .mapboxgl-popup-close-button {
       color: #482e83;
       font-size: 18px;
@@ -601,21 +555,21 @@ $conn->close();
     }
 
     .popup-header {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  margin-bottom: 1rem;
-  padding-bottom: 0.8rem;
-  border-bottom: 1px solid #eee;
-  flex-direction: column;
-  gap: 0.5rem;
-}
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      margin-bottom: 1rem;
+      padding-bottom: 0.8rem;
+      border-bottom: 1px solid #eee;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
 
     .popup-header i {
-  color: #3ebeab;
-  font-size: 1.5rem;
-}
+      color: #3ebeab;
+      font-size: 1.5rem;
+    }
 
     .popup-header h3 {
       margin: 0;
@@ -653,28 +607,27 @@ $conn->close();
     }
 
     .pdf-container {
-  text-align: center;
-  margin: 1rem 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-    
+      text-align: center;
+      margin: 1rem 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
 
     .pdf-button {
-  background: linear-gradient(135deg, #482e83, #685ca8);
-  color: white;
-  padding: 0.6rem 1.5rem;
-  border-radius: 20px;
-  text-decoration: none;
-  font-size: 0.7rem;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  justify-content: center;
-}
+      background: linear-gradient(135deg, #482e83, #685ca8);
+      color: white;
+      padding: 0.6rem 1.5rem;
+      border-radius: 20px;
+      text-decoration: none;
+      font-size: 0.7rem;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      justify-content: center;
+    }
 
     .pdf-button:hover {
       transform: translateY(-2px);
@@ -690,7 +643,225 @@ $conn->close();
       border: 1px solid #eee;
     }
 
-    /* Mobile Responsiveness */
+    .logo-img {
+      height: 50px;
+      width: auto;
+      vertical-align: middle;
+    }
+
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(5px);
+      z-index: 10000;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 1rem;
+    }
+
+    .modal-fitosanitario {
+      background: white;
+      border-radius: 20px;
+      max-width: 600px;
+      width: 100%;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      animation: slideUp 0.4s ease;
+      position: relative;
+    }
+
+    .modal-header {
+      background: linear-gradient(135deg, #482e83, #685ca8);
+      color: white;
+      padding: 1.5rem 2rem;
+      border-radius: 20px 20px 0 0;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .modal-header i {
+      font-size: 1rem;
+    }
+
+    .modal-header h3 {
+      margin: 0;
+      font-size: 1.4rem;
+      font-weight: 500;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      color: white;
+      font-size: 1.5rem;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+    }
+
+    .modal-close:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: rotate(90deg);
+    }
+
+    .modal-body {
+      padding: 2rem;
+    }
+
+    .fitosanitario-content {
+      background: #f8f9fa;
+      border-left: 4px solid #3ebeab;
+      padding: 1.5rem;
+      border-radius: 8px;
+      line-height: 1.8;
+      color: #000000ff;
+      font-size: 1rem;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .fitosanitario-empty {
+      text-align: center;
+      padding: 2rem;
+      color: #000000ff;
+    }
+
+    .fitosanitario-empty i {
+      font-size: 3rem;
+      color: #000000ff;
+      margin-bottom: 1rem;
+    }
+
+    .btn-fitosanitario {
+      background: linear-gradient(135deg, #482e83, #503d7dff);
+      color: white;
+      padding: 0.6rem 1.5rem;
+      border-radius: 30px;
+      text-decoration: none;
+      font-size: 0.6rem;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      border: none;
+      cursor: pointer;
+      margin-top: 0.5rem;
+      font-family: 'Arciform', 'Poppins', sans-serif;
+    }
+
+    .btn-fitosanitario:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(86, 61, 174, 0.3);
+    }
+/* Modal de imagen completa */
+.image-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  z-index: 10001;
+  justify-content: center;
+  align-items: center;
+  animation: fadeIn 0.3s ease;
+}
+
+.image-modal.active {
+  display: flex;
+}
+
+.image-modal-content {
+  max-width: 90%;
+  max-height: 90%;
+  object-fit: contain;
+  border-radius: 10px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  animation: zoomIn 0.3s ease;
+}
+
+.image-modal-close {
+  position: absolute;
+  top: 20px;
+  right: 30px;
+  color: white;
+  font-size: 40px;
+  font-weight: bold;
+  cursor: pointer;
+  background: rgba(91, 14, 168, 1);
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.image-modal-close:hover {
+  background: rgba(0, 255, 255, 0.8);
+  transform: rotate(90deg);
+}
+
+@keyframes zoomIn {
+  from {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Cursor pointer para la imagen del popup */
+.popup-image {
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.popup-image:hover {
+  transform: scale(1.02);
+  opacity: 0.9;
+}
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(50px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
     @media (max-width: 768px) {
       .nav {
         padding: 0 1rem;
@@ -727,451 +898,172 @@ $conn->close();
       }
 
       .map-legend {
-        position: relative;
-        margin-bottom: 1rem;
-        top: auto;
-        right: auto;
+        display: none;
       }
 
-      .map-container {
-        padding: 1rem;
-        margin: 0 1rem;
+      #map {
+        width: 90%;
+        height: 650px;
+        border-radius: 8px;
       }
 
-      
-      /* Oculta la leyenda del mapa */
-    .map-legend {
-        display: none; }
+      .mapboxgl-popup {
+        max-width: 90vw !important;
+      }
 
-    /* Opcional: Centra el mapa si lo deseas en móviles */
-    #map {
-      width: 90%;
-      height: 650px;
-      border-radius: 8px;
+      .mapboxgl-popup-content {
+        border-radius: 12px;
+        padding: 0.8rem !important;
+        max-width: 280px !important;
+        font-size: 0.85rem;
+        margin: 0 !important;
+      }
+
+      .popup-header {
+        margin-bottom: 0.6rem;
+        padding-bottom: 0.5rem;
+        gap: 0.3rem;
+      }
+
+      .popup-header i {
+        font-size: 1.2rem;
+      }
+
+      .popup-header h3 {
+        font-size: 0.95rem;
+      }
+
+      .popup-image {
+        height: 140px;
+        margin-bottom: 0.7rem;
+        border-radius: 8px;
+      }
+
+      .popup-info {
+        font-size: 0.75rem;
+        line-height: 1.4;
+        margin-bottom: 0.4rem;
+      }
+
+      .btn-fitosanitario {
+        padding: 0.5rem 1rem;
+        font-size: 0.7rem;
+        border-radius: 20px;
+        margin-top: 0.3rem;
+      }
+
+      .pdf-button {
+        padding: 0.5rem 1.5rem;
+        font-size: 0.7rem;
+        border-radius: 15px;
+      }
+
+      .qr-code {
+        width: 60px;
+        height: 60px;
+        margin: 0.6rem auto 0;
+      }
+
+      .modal-fitosanitario {
+        max-width: 95%;
+        max-height: 85vh;
+        margin: 0 0.5rem;
+      }
+
+      .logo-img {
+        height: 40px;
+      }
+
+      .logo-title {
+        font-size: 0.75rem;
+      }
     }
 
-    /* Ajustes generales del popup */
-  .mapboxgl-popup {
-    max-width: 90vw !important;
-  }
+    @media (max-width: 480px) {
+      .mapboxgl-popup-content {
+        padding: 0.7rem !important;
+        font-size: 0.8rem;
+      }
 
-  .mapboxgl-popup-content {
-    border-radius: 12px;
-    padding: 0.8rem !important;
-    max-width: 280px !important;
-    font-size: 0.85rem;
-    margin: 0 !important;
-  }
+      .popup-header h3 {
+        font-size: 0.85rem;
+      }
 
-  /* Forzar posicionamiento correcto del popup */
-  .mapboxgl-popup-anchor-left .mapboxgl-popup-content,
-  .mapboxgl-popup-anchor-right .mapboxgl-popup-content,
-  .mapboxgl-popup-anchor-top .mapboxgl-popup-content,
-  .mapboxgl-popup-anchor-bottom .mapboxgl-popup-content {
-    max-width: 280px !important;
-  }
+      .popup-image {
+        height: 100px;
+      }
 
-  /* Header del popup más compacto */
-  .popup-header {
-    margin-bottom: 0.6rem;
-    padding-bottom: 0.5rem;
-    gap: 0.3rem;
-  }
+      .popup-info {
+        font-size: 0.7rem;
+      }
+    }
 
-  .popup-header i {
-    font-size: 1.2rem;
-  }
-
-  .popup-header h3 {
-    font-size: 0.95rem;
-  }
-
-  .popup-header div[style*="font-size: 0.6rem"] {
-    font-size: 0.55rem !important;
-  }
-
-  /* Imagen más pequeña */
-  .popup-image {
-    height: 140px;
-    margin-bottom: 0.7rem;
-    border-radius: 8px;
-    width: 100%;
-    object-fit: cover;
-  }
-
-  /* Info más compacta */
-  .popup-info {
-    font-size: 0.75rem;
-    line-height: 1.4;
-    margin-bottom: 0.4rem;
-  }
-
-  .popup-info i {
-    width: 10px;
-    margin-right: 6px;
-    font-size: 0.75rem;
-  }
-
-  /* Botón fitosanitario más pequeño */
-  .btn-fitosanitario {
-    padding: 0.5rem 1rem;
-    font-size: 0.7rem;
-    border-radius: 20px;
-    margin-top: 0.3rem;
-  }
-
-  /* Botón PDF más compacto */
-  .pdf-button {
-    padding: 0.5rem 1.5rem;
-    font-size: 0.7rem;
-    border-radius: 15px;
-    width: auto;
-  }
-
-  .pdf-container {
-    margin: 0.6rem 0;
-    display: flex;
-    justify-content: center;
-    width: 100%;
-  }
-  
-
-  /* QR code más pequeño */
-  .qr-code {
-    width: 60px;
-    height: 60px;
-    margin: 0.6rem auto 0;
-  }
-
-  /* Botón de cerrar más accesible */
-  .mapboxgl-popup-close-button {
-    font-size: 20px;
-    padding: 8px;
-    width: 32px;
-    height: 32px;
-    line-height: 1;
-  }
-
-  /* Ajustar el tip (triangulito) del popup */
-  .mapboxgl-popup-tip {
-    border-width: 8px;
-  }
-
-  /* Modal fitosanitario en móvil */
-  .modal-fitosanitario {
-    max-width: 95%;
-    max-height: 85vh;
-    margin: 0 0.5rem;
-  }
-  
-  .modal-header {
-    padding: 1rem 1.2rem;
-  }
-
-  .modal-header h3 {
-    font-size: 1.1rem;
-  }
-  
-  .modal-body {
-    padding: 1rem;
-  }
-
-  .fitosanitario-content {
-    padding: 1rem;
-    font-size: 0.9rem;
-    line-height: 1.6;
-  }
-
-  /* Ajustar separación del contenido */
-  .popup-info[style*="display: block"] {
-    margin-top: 0.3rem;
-  }
-}
-
-/* Para pantallas muy pequeñas (320px - 480px) */
-@media (max-width: 480px) {
-  .mapboxgl-popup {
-    max-width: 90vw !important;
-  }
-
-  .mapboxgl-popup-content {
-    padding: 0.7rem !important;
-    font-size: 0.8rem;
-  }
-
-  .popup-header h3 {
-    font-size: 0.85rem;
-  }
-
-  .popup-image {
-    height: 100px;
-  }
-
-  .popup-info {
-    font-size: 0.7rem;
-  }
-
-  .btn-fitosanitario {
-    padding: 0.45rem 0.8rem;
-    font-size: 0.65rem;
-  }
-
-  .pdf-button {
-    padding: 0.45rem 1.2rem;
-    font-size: 0.7rem;
-  }
-
-  .qr-code {
-    width: 60px;
-    height: 60px;
-  }
-  .logo-img {
-  height: 40px;
-}
-
-.logo-title {
-  font-size: 0.75rem;
-}
-}
-
-    /* Scroll behavior */
     html {
       scroll-behavior: smooth;
     }
-.logo-img {
-  height: 50px;   /* ajusta el tamaño del logo */
-  width: auto;    /* mantiene la proporción */
-  vertical-align: middle; /* lo alinea con el menú */
-}
 
-/* Modal del Estado Fitosanitario */
-.modal-overlay {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(5px);
-  z-index: 10000;
-  animation: fadeIn 0.3s ease;
-}
+    /* Controles de navegación de Mapbox */
+    .mapboxgl-ctrl-group {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
 
-.modal-overlay.active {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 1rem;
-}
-
-.modal-fitosanitario {
-  background: white;
-  border-radius: 20px;
-  max-width: 600px;
-  width: 100%;
-  max-height: 80vh;
-  overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  animation: slideUp 0.4s ease;
-  position: relative;
-}
-
-.modal-header {
-  background: linear-gradient(135deg, #482e83, #685ca8);
-  color: white;
-  padding: 1.5rem 2rem;
-  border-radius: 20px 20px 0 0;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.modal-header i {
-  font-size: 1rem;
-}
-
-.modal-header h3 {
-  margin: 0;
-  font-size: 1.4rem;
-  font-weight: 500
-  }
-
-.modal-close {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
-  color: white;
-  font-size: 1.5rem;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-}
-
-.modal-close:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: rotate(90deg);
-}
-
-.modal-body {
-  padding: 2rem;
-}
-
-.fitosanitario-content {
-  background: #f8f9fa;
-  border-left: 4px solid #3ebeab;
-  padding: 1.5rem;
-  border-radius: 8px;
-  line-height: 1.8;
-  color: #000000ff;
-  font-size: 1rem;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-}
-
-.fitosanitario-empty {
-  text-align: center;
-  padding: 2rem;
-  color: #000000ff;
-}
-
-.fitosanitario-empty i {
-  font-size: 3rem;
-  color: #000000ff;
-  margin-bottom: 1rem;
-}
-
-.btn-fitosanitario {
-  background: linear-gradient(135deg, #482e83, #503d7dff);
-  color: white;
-  padding: 0.6rem 1.5rem;
-  border-radius: 30px;
-  text-decoration: none;
-  font-size: 0.6rem;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  border: none;
-  cursor: pointer;
-  margin-top: 0.5rem;
-  font-family: 'Arciform', 'Poppins', sans-serif;
-}
-
-.btn-fitosanitario:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(86, 61, 174, 0.3);
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(50px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .modal-fitosanitario {
-    max-width: 90%;
-    max-height: 90vh;
-  }
-  
-  .modal-header {
-    padding: 1.2rem 1.5rem;
-  }
-  
-  .modal-body {
-    padding: 1.5rem;
-  }
-}
-    
+    .mapboxgl-ctrl-zoom-in,
+    .mapboxgl-ctrl-zoom-out,
+    .mapboxgl-ctrl-compass {
+      width: 36px;
+      height: 36px;
+    }
   </style>
 </head>
 
 <body>
-  <!-- Header -->
   <header class="header">
     <nav class="nav">
       <a href="#home" class="logo">
         <img src="img/logoemavrita.png" alt="Emavra Logo" class="logo-img">
         <div class="logo-text">
-    <span class="logo-title"> Gestión <br>
-    Cap. Manfred Reyes Villa</span>
-  </div>
+          <span class="logo-title">Gestión <br>Cap. Manfred Reyes Villa</span>
+        </div>
       </a>
       <ul class="nav-links">
         <li><a href="#about">¿Qué hacemos?</a></li>
         <li><a href="#map">Mapa de Árboles</a></li>
         <li><a href="#honor">Muro de Honor</a></li>
-        <li><a href="#contact"class="btn-admin">Contacto</a></li>
-        
+        <li><a href="#contact" class="btn-admin">Contacto</a></li>
       </ul>
     </nav>
   </header>
 
-  <!-- Hero Section -->
-<section id="home" class="hero">
-  <div class="hero-content">
-    
-    
-    <h1>Bienvenido a SIF</h1>
-    <!-- Círculo con imagen -->
-    <div class="hero-image-circle">
-      <img src="img/logoofi.jpg" alt="Emavra">
+  <section id="home" class="hero">
+    <div class="hero-content">
+      <h1>Bienvenido a SIF</h1>
+      <div class="hero-image-circle">
+        <img src="img/logoofi.jpg" alt="Emavra">
+      </div>
+      <p class="hero-subtitle">
+        Sistema de Información Forestal para planificar y construir un futuro más verde, sustentable y sostenible.
+      </p>
+      <div class="hero-buttons">
+        <a href="#about" class="btn btn-primary">
+          <i class="fas fa-leaf"></i>
+          Conoce más
+        </a>
+        <a href="#map" class="btn btn-secondary">
+          <i class="fas fa-map"></i>
+          Ver mapa
+        </a>
+      </div>
     </div>
-    <p class="hero-subtitle">
-      Sistema de Información
-Forestal para planificar y
-construir un futuro más
-verde, sustentable y
-sostenible.
-    </p>
-    
-    <div class="hero-buttons">
-      <a href="#about" class="btn btn-primary">
-        <i class="fas fa-leaf"></i>
-        Conoce más
-      </a>
-      <a href="#map" class="btn btn-secondary">
-        <i class="fas fa-map"></i>
-        Ver mapa
-      </a>
-    </div>
-  </div>
-</section>
+  </section>
 
-  
-
-  <!-- About Section -->
   <section id="about" class="about">
     <div class="container">
       <div class="section-header">
         <h2 class="section-title">¿Qué Hacemos?</h2>
         <p class="section-subtitle">
-          Conectamos la
-tecnología con la
-naturaleza para generar
-un impacto positivo en
-el medio ambiente de
-Cochabamba.
+          Conectamos la tecnología con la naturaleza para generar un impacto positivo en el medio ambiente de Cochabamba.
         </p>
       </div>
 
@@ -1182,13 +1074,7 @@ Cochabamba.
           </div>
           <h3 class="feature-title">Mapa Interactivo</h3>
           <p class="feature-description">
-            Descubre cada rincón
-verde de las plazas,
-plazuelas y jardineras
-centrales de nuestra
-Llajta identificando
-arboles según su tipo de
-información detallada.
+            Descubre cada rincón verde de las plazas, plazuelas y jardineras centrales de nuestra Llajta identificando arboles según su tipo de información detallada.
           </p>
         </div>
 
@@ -1198,11 +1084,7 @@ información detallada.
           </div>
           <h3 class="feature-title">Comunidad arborista</h3>
           <p class="feature-description">
-            Conviértete en un
-guardián forestal,
-registrate y contribuye en
-el crecimiento del
-ecosistema urbano.
+            Conviértete en un guardián forestal, registrate y contribuye en el crecimiento del ecosistema urbano.
           </p>
         </div>
 
@@ -1212,18 +1094,13 @@ ecosistema urbano.
           </div>
           <h3 class="feature-title">Formación verde</h3>
           <p class="feature-description">
-            Únete a nuestros cursos,
-talleres y diferentes
-actividades grupales. de
-forestación y
-reforestación.
+            Únete a nuestros cursos, talleres y diferentes actividades grupales de forestación y reforestación.
           </p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Map Section -->
   <section id="map" class="map-section">
     <div class="container">
       <div class="section-header">
@@ -1237,7 +1114,6 @@ reforestación.
         <div id="map"></div>
         <div class="map-legend">
           <h4><i class="fas fa-info-circle"></i> Origen</h4>
-        
           <div class="legend-item">
             <span class="legend-icon native"></span>
             Árboles Nativos
@@ -1251,7 +1127,6 @@ reforestación.
     </div>
   </section>
 
-  <!-- Honor Wall -->
   <section id="honor" class="honor-wall">
     <div class="container">
       <div class="section-header">
@@ -1265,9 +1140,7 @@ reforestación.
         <div class="honor-card">
           <img src="img/volun.jpg" alt="Voluntario 1" class="honor-avatar">
           <h3 class="honor-name">Defensores ambientales</h3>
-          <p class="honor-contribution">🌿 Grupo de voluntarios que
-son parte de la
-reforestacíon</p>
+          <p class="honor-contribution">🌿 Grupo de voluntarios que son parte de la reforestación</p>
         </div>
 
         <div class="honor-card">
@@ -1279,10 +1152,7 @@ reforestacíon</p>
         <div class="honor-card">
           <img src="img/defensores.jpg" alt="Voluntario 3" class="honor-avatar">
           <h3 class="honor-name">Familia Forestal</h3>
-          <p class="honor-contribution">🌿 Aliados estratégicos que
-contribuyen en la
-preservación de nuestro
-ecosistema.</p>
+          <p class="honor-contribution">🌿 Aliados estratégicos que contribuyen en la preservación de nuestro ecosistema.</p>
         </div>
 
         <div class="honor-card">
@@ -1300,26 +1170,21 @@ ecosistema.</p>
         <div class="honor-card">
           <img src="img/colabo.png" alt="Voluntario 6" class="honor-avatar">
           <h3 class="honor-name">Colaboradores Vecinales</h3>
-          <p class="honor-contribution">🌿 Grupos sociales que
-impulsan el trabajo de
-forestación en sus zonas.</p>
+          <p class="honor-contribution">🌿 Grupos sociales que impulsan el trabajo de forestación en sus zonas.</p>
         </div>
       </div>
     </div>
-</section>
+  </section>
 
-  <!-- Newsletter -->
   <section id="contact" class="newsletter">
     <div class="container">
       <h2 class="section-title">Mantente Informado</h2>
       <p class="section-subtitle">
         Recibe información sobre nuevos árboles, eventos y noticias ambientales
       </p>
-      
     </div>
   </section>
 
-  <!-- Footer -->
   <footer class="footer">
     <div class="container">
       <div class="footer-grid">
@@ -1335,17 +1200,12 @@ forestación en sus zonas.</p>
           <h3>Contacto</h3>
           <p><i class="fas fa-envelope"></i> emavra.cochabamba.bo</p>
           <p><i class="fas fa-phone"></i> +4 4448430</p>
-          <p><i class="fas fa-map-marker-alt"></i> C. Man Hego S/N esq. Av.
-Beneméritos del Chaco ,
-Cochabamba, Bolivia.</p>
+          <p><i class="fas fa-map-marker-alt"></i> C. Man Hego S/N esq. Av. Beneméritos del Chaco, Cochabamba, Bolivia.</p>
         </div>
-
-        
 
         <div class="footer-section">
           <h3>Síguenos</h3>
-
-          <p><a href="https://www.facebook.com/EmavraCbba/" target="_blank" style="text-decoration:none; color:inherit;"><i class="fab fa-facebook"> </i> Facebook </a></p>
+          <p><a href="https://www.facebook.com/EmavraCbba/" target="_blank" style="text-decoration:none; color:inherit;"><i class="fab fa-facebook"></i> Facebook</a></p>
           <p><a href="https://www.instagram.com/emavracbba/" target="_blank" style="text-decoration:none; color:inherit;"><i class="fab fa-instagram"></i> Instagram</a></p>
           <p><i class="fab fa-whatsapp"></i> WhatsApp +591 69254248</p>
         </div>
@@ -1356,364 +1216,362 @@ Cochabamba, Bolivia.</p>
       </div>
     </div>
   </footer>
-<!-- Modal del Estado Fitosanitario -->
-<div id="modalFitosanitario" class="modal-overlay">
-  <div class="modal-fitosanitario">
-    <div class="modal-header">
-      <i class="fas fa-heartbeat"></i>
-      <h4>Estado Fitosanitario</h3>
-      <button class="modal-close" onclick="cerrarModalFitosanitario()">
-        <i class="fas fa-times"></i>
-      </button>
-    </div>
-    <div class="modal-body">
-      <div id="fitosanitarioContent"></div>
+
+  <div id="modalFitosanitario" class="modal-overlay">
+    <div class="modal-fitosanitario">
+      <div class="modal-header">
+        <i class="fas fa-heartbeat"></i>
+        <h3>Estado Fitosanitario</h3>
+        <button class="modal-close" onclick="cerrarModalFitosanitario()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div id="fitosanitarioContent"></div>
+      </div>
     </div>
   </div>
+  <!-- Modal de imagen completa -->
+<div id="imageModal" class="image-modal" onclick="cerrarImagenModal()">
+  <span class="image-modal-close">&times;</span>
+  <img id="modalImage" class="image-modal-content" alt="Imagen completa">
 </div>
+
   <script>
-    
-    // Mapbox configuration
-mapboxgl.accessToken = 'pk.eyJ1IjoiYWxlc3NpcyIsImEiOiJjbGcxbHBtbHQwdDU5M2RubDFodjY3a2x0In0.NXe43GdM4PJBj7ow0Dnkpw';
+    mapboxgl.accessToken = 'pk.eyJ1IjoiYWxlc3NpcyIsImEiOiJjbGcxbHBtbHQwdDU5M2RubDFodjY3a2x0In0.NXe43GdM4PJBj7ow0Dnkpw';
 
-// Get trees data from PHP
-const arboles = <?php echo json_encode($arboles); ?>;
-let allMarkers = [];
+    const arboles = <?php echo json_encode($arboles); ?>;
+    let allMarkers = [];
 
-// URL parameter function
-function getURLParameter(name) {
-  const urlParams = new URLSearchParams(window.location.search);
-  return urlParams.get(name);
-}
-
-// Check if coming from QR code
-const treeId = getURLParameter('tree_id');
-const isFromQR = treeId !== null;
-
-// Determinar el maxWidth según el dispositivo
-const isMobile = window.innerWidth <= 768;
-const popupMaxWidth = isMobile ? '280px' : '350px';
-
-// Si viene de QR, iniciar el mapa más alejado para ver la animación
-const map = new mapboxgl.Map({
-  container: 'map',
-  style: 'mapbox://styles/mapbox/outdoors-v11',
-  center: isFromQR ? [-66.156977, -17.390838] : [-66.156977, -17.393838],
-  zoom: isFromQR ? 14 : 17,
-  pitch: 0,
-  bearing: isFromQR ? 0 : -17.6,
-  touchZoomRotate: true,
-  touchPitch: true,
-  dragRotate: true,
-  dragPan: true,
-  scrollZoom: true,
-  doubleClickZoom: true,
-  keyboard: true
-});
-
-map.on('load', function() {
-
-  // Forzar que el mapa tome control total de eventos táctiles
-  const canvas = map.getCanvas();
-  canvas.style.touchAction = 'none';
-  
-  // Habilitar controles manualmente
-  map.touchZoomRotate.enable();
-  map.dragPan.enable();
-  map.scrollZoom.enable();
-  
-  // Load all trees
-  arboles.forEach(arbol => {
-    const coordinates = arbol.coordenadas.replace('POINT(', '').replace(')', '').split(' ');
-    const lng = parseFloat(coordinates[0]);
-    const lat = parseFloat(coordinates[1]);
-
-    if (isNaN(lng) || isNaN(lat)) {
-      console.error("Invalid coordinates:", arbol);
-      return;
+    function getURLParameter(name) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(name);
     }
 
-    // Create marker element
-    const el = document.createElement('div');
-    el.className = 'tree-marker';
+    const treeId = getURLParameter('tree_id');
+    const isFromQR = treeId !== null;
+    const isMobile = window.innerWidth <= 768;
+    const popupMaxWidth = isMobile ? '280px' : '350px';
 
-    // Set border color based on tree state
-    switch (arbol.estado.toLowerCase()) {
-      case 'exótico':
-        el.style.border = '3px solid #482e83';
-        break;
-      case 'nativo':
-        el.style.border = '3px solid #00ae80ff';
-        break;
-      default:
-        el.style.border = '3px solid #57606f';
-    }
+    const map = new mapboxgl.Map({
+      container: 'map',
+      style: 'mapbox://styles/mapbox/outdoors-v11',
+      center: isFromQR ? [-66.156977, -17.390838] : [-66.156977, -17.393838],
+      zoom: isFromQR ? 14 : 17,
+      pitch: 0,
+      bearing: isFromQR ? 0 : -17.6,
+      attributionControl: true,
+      cooperativeGestures: false
+    });
 
-    // Create popup content
-    const currentUrl = window.location.origin + window.location.pathname;
-    const correctQrUrl = `${currentUrl}?tree_id=${arbol.id}#map`;
-    const popupContent = `
-      <div class="popup-header">
-  
-  <div style="width: 100%;">
-    <div style="font-size: 0.6rem; color: #482e83; font-weight: 400; margin-bottom: 2px;"><strong>Nombre Científico</strong></div>
-    <h3 style="margin: 0;">${arbol.especie}</h3>
-  </div>
-</div>
-      
-      <img src="${arbol.fotoUrl}" alt="Foto del árbol" class="popup-image">
+    // Añadir controles de navegación estilo Google Maps
+    map.addControl(new mapboxgl.NavigationControl({
+      showCompass: true,
+      showZoom: true,
+      visualizePitch: false
+    }), 'top-right');
 
-      <div class="popup-info">
-        <i class="fas fa-leaf"></i>
-        <strong>Nombre común:</strong> ${arbol.nombre_comun}
-      </div>
-      
-      <div class="popup-info">
-        <i class="fas fa-sync-alt"></i>
-        <strong>Edad:</strong> ${arbol.edad} años
-      </div>
-      
-      <div class="popup-info">
-        <i class="fas fa-arrows-alt-v"></i>
-        <strong>Altura:</strong> ${arbol.altura} m
-      </div>
-      
-      <div class="popup-info">
-        <i class="fas fa-circle"></i>
-        <strong>Circunferencia Altura Pecho:</strong> ${arbol.diametroTronco} cm
-      </div>
-      
-      <div class="popup-info">
-        <i class="fas fa-globe-americas"></i>
-        <strong>Origen:</strong> ${arbol.estado}
-      </div>
-      <div class="popup-info">
-        <i class="fas fa-barcode"></i>
-        <strong>Código de árbol:</strong> ${arbol.codigo_arbol}
-      </div>
-      
-      ${arbol.estado_fitosanitario ? `
-    <div class="popup-info" style="display: block; text-align: center; margin-top: 0.5rem;">
-      <button class="btn-fitosanitario" onclick="abrirModalFitosanitario(${arbol.id})">
-        <i class="fas fa-stethoscope"></i> Ver Estado Fitosanitario
-      </button>
-    </div>
-  ` : ''}
+    map.on('load', function() {
+      arboles.forEach(arbol => {
+        const coordinates = arbol.coordenadas.replace('POINT(', '').replace(')', '').split(' ');
+        const lng = parseFloat(coordinates[0]);
+        const lat = parseFloat(coordinates[1]);
 
-    ${arbol.pdfUrl ? `
-      <div class="popup-info pdf-container">
-        <a href="${arbol.pdfUrl}" target="_blank" class="pdf-button">
-          <i class="fas fa-file-pdf"></i> Ver más información
-        </a>
-      </div>
-    ` : ''}
-      
-      <div style="text-align: center; margin-top: 15px;">
-        <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(correctQrUrl)}" 
-             alt="QR del árbol" class="qr-code">
-      </div>
-    `;
+        if (isNaN(lng) || isNaN(lat)) {
+          console.error("Invalid coordinates:", arbol);
+          return;
+        }
 
-    // Create popup con maxWidth dinámico
-    const popup = new mapboxgl.Popup({
-      offset: 12,
-      anchor: "left",
-      closeButton: true,
-      closeOnClick: false,
-      maxWidth: popupMaxWidth
-    }).setHTML(popupContent);
+        let markerColor;
+        switch (arbol.estado.toLowerCase()) {
+          case 'exótico':
+            markerColor = '#482e83';
+            break;
+          case 'nativo':
+            markerColor = '#00ae80ff';
+            break;
+          default:
+            markerColor = '#57606f';
+        }
 
-    // Create marker
-    const marker = new mapboxgl.Marker(el)
-      .setLngLat([lng, lat])
-      .setPopup(popup)
-      .addTo(map);
-
-    // Add click event to marker for zoom effect
-    el.addEventListener('click', () => {
-      // Fly to marker with smooth animation
-      map.flyTo({
-        center: [lng + 0.00018, lat],
-        zoom: 19,
-        duration: 800,
+        const currentUrl = window.location.origin + window.location.pathname;
+        const correctQrUrl = `${currentUrl}?tree_id=${arbol.id}#map`;
         
-      });
-      
-      // Open popup after animation
-      setTimeout(() => {
-        popup.addTo(map);
-      }, 1000);
-    });
+        const popupContent = `
+          <div class="popup-header">
+            <div style="width: 100%;">
+              <div style="font-size: 0.6rem; color: #482e83; font-weight: 400; margin-bottom: 2px;"><strong>Nombre Científico</strong></div>
+              <h3 style="margin: 0;">${arbol.especie}</h3>
+            </div>
+          </div>
+          
+          <img src="${arbol.fotoUrl}" 
+       alt="Foto del árbol" 
+       class="popup-image" 
+       onclick="abrirImagenModal('${arbol.fotoUrl}', '${arbol.especie}')"
+       style="cursor: pointer;">
 
-    // Store marker with ID for reference
-    allMarkers.push({
-      id: arbol.id,
-      marker: marker,
-      popup: popup,
-      coordinates: [lng, lat],
-      arbol: arbol
-    });
-  });
+          <div class="popup-info">
+            <i class="fas fa-leaf"></i>
+            <strong>Nombre común:</strong> ${arbol.nombre_comun}
+          </div>
+          
+          <div class="popup-info">
+            <i class="fas fa-sync-alt"></i>
+            <strong>Edad:</strong> ${arbol.edad} años
+          </div>
+          
+          <div class="popup-info">
+            <i class="fas fa-arrows-alt-v"></i>
+            <strong>Altura:</strong> ${arbol.altura} m
+          </div>
+          
+          <div class="popup-info">
+            <i class="fas fa-circle"></i>
+            <strong>Circunferencia Altura Pecho:</strong> ${arbol.diametroTronco} cm
+          </div>
+          
+          <div class="popup-info">
+            <i class="fas fa-globe-americas"></i>
+            <strong>Origen:</strong> ${arbol.estado}
+          </div>
+          
+          <div class="popup-info">
+            <i class="fas fa-barcode"></i>
+            <strong>Código de árbol:</strong> ${arbol.codigo_arbol}
+          </div>
+          
+          ${arbol.estado_fitosanitario ? `
+            <div class="popup-info" style="display: block; text-align: center; margin-top: 0.5rem;">
+              <button class="btn-fitosanitario" onclick="abrirModalFitosanitario(${arbol.id})">
+                <i class="fas fa-stethoscope"></i> Ver Estado Fitosanitario
+              </button>
+            </div>
+          ` : ''}
 
-  // Check for tree_id in URL (QR code functionality)
-  if (treeId) {
-    // Scroll to map immediately when coming from QR
-    setTimeout(() => {
-      const mapElement = document.getElementById('map');
-      if (mapElement) {
-        mapElement.scrollIntoView({ 
-          behavior: 'auto', 
-          block: 'end' 
+          ${arbol.pdfUrl ? `
+            <div class="popup-info pdf-container">
+              <a href="${arbol.pdfUrl}" target="_blank" class="pdf-button">
+                <i class="fas fa-file-pdf"></i> Ver más información
+              </a>
+            </div>
+          ` : ''}
+          
+          <div style="text-align: center; margin-top: 15px;">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(correctQrUrl)}" 
+                 alt="QR del árbol" class="qr-code">
+          </div>
+        `;
+
+        const popup = new mapboxgl.Popup({
+          offset: 12,
+          anchor: "left",
+          closeButton: true,
+          closeOnClick: false,
+          maxWidth: popupMaxWidth
+        }).setHTML(popupContent);
+
+        const marker = new mapboxgl.Marker({
+          color: markerColor,
+          scale: 0.8
+        })
+          .setLngLat([lng, lat])
+          .setPopup(popup)
+          .addTo(map);
+
+        marker.getElement().addEventListener('click', () => {
+          map.flyTo({
+            center: [lng + 0.00018, lat],
+            zoom: 19,
+            duration: 800
+          });
+          
+          setTimeout(() => {
+            popup.addTo(map);
+          }, 1000);
         });
-      }
-    }, 300);
-    
-    // Then start the tree animation
-    setTimeout(() => {
-      openTreePopup(parseInt(treeId));
-    }, 300);
-  }
-});
 
-function openTreePopup(treeId) {
-  const targetMarker = allMarkers.find(item => item.id == treeId);
- 
-  if (targetMarker) {
-    // Ajustar las coordenadas para centrar mejor
-    const adjustedCoordinates = [
-      targetMarker.coordinates[0] + 0.0008,
-      targetMarker.coordinates[1] - 0.0000
-    ];
-    
-    // Fly to specific tree with enhanced zoom and smoother animation
-    map.flyTo({
-      center: adjustedCoordinates,
-      zoom: 17,
-      
-      
-      duration: 2500,
-      easing: function(t) {
-        return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+        allMarkers.push({
+          id: arbol.id,
+          marker: marker,
+          popup: popup,
+          coordinates: [lng, lat],
+          arbol: arbol
+        });
+      });
+
+      if (treeId) {
+        setTimeout(() => {
+          const mapElement = document.getElementById('map');
+          if (mapElement) {
+            mapElement.scrollIntoView({ 
+              behavior: 'auto', 
+              block: 'end' 
+            });
+          }
+        }, 300);
+        
+        setTimeout(() => {
+          openTreePopup(parseInt(treeId));
+        }, 300);
       }
     });
-    
-    // Open popup after animation completes
-    setTimeout(() => {
-      targetMarker.popup.addTo(map);
-    }, 2700);
-    
-    // Clean URL after showing tree
-    if (window.history && window.history.replaceState) {
-      const url = new URL(window.location.href);
-      url.searchParams.delete('tree_id');
-      window.history.replaceState({}, document.title, url.pathname + url.hash);
+
+    function openTreePopup(treeId) {
+      const targetMarker = allMarkers.find(item => item.id == treeId);
+     
+      if (targetMarker) {
+        const adjustedCoordinates = [
+          targetMarker.coordinates[0] + 0.0008,
+          targetMarker.coordinates[1] - 0.0000
+        ];
+        
+        map.flyTo({
+          center: adjustedCoordinates,
+          zoom: 17,
+          duration: 2500,
+          easing: function(t) {
+            return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+          }
+        });
+        
+        setTimeout(() => {
+          targetMarker.popup.addTo(map);
+        }, 2700);
+        
+        if (window.history && window.history.replaceState) {
+          const url = new URL(window.location.href);
+          url.searchParams.delete('tree_id');
+          window.history.replaceState({}, document.title, url.pathname + url.hash);
+        }
+      } else {
+        console.error("Tree not found with ID:", treeId);
+        alert("Árbol no encontrado. El código QR podría estar dañado o el árbol ya no existe.");
+      }
     }
-  } else {
-    console.error("Tree not found with ID:", treeId);
-    alert("Árbol no encontrado. El código QR podría estar dañado o el árbol ya no existe.");
-  }
-}
 
-// Header scroll effect
-window.addEventListener('scroll', function() {
-  const header = document.querySelector('.header');
-  if (window.scrollY > 100) {
-    header.style.background = 'rgba(255, 255, 255, 0.98)';
-    header.style.boxShadow = '0 2px 30px rgba(0, 0, 0, 0.15)';
-  } else {
-    header.style.background = 'rgba(255, 255, 255, 0.95)';
-    header.style.boxShadow = '0 2px 20px rgba(0, 0, 0, 0.1)';
-  }
-});
+    window.addEventListener('scroll', function() {
+      const header = document.querySelector('.header');
+      if (window.scrollY > 100) {
+        header.style.background = 'rgba(255, 255, 255, 0.98)';
+        header.style.boxShadow = '0 2px 30px rgba(0, 0, 0, 0.15)';
+      } else {
+        header.style.background = 'rgba(255, 255, 255, 0.95)';
+        header.style.boxShadow = '0 2px 20px rgba(0, 0, 0, 0.1)';
+      }
+    });
 
-// Smooth scrolling for navigation links
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-  anchor.addEventListener('click', function (e) {
-    e.preventDefault();
-    const target = document.querySelector(this.getAttribute('href'));
-    if (target) {
-      const offsetTop = target.offsetTop - 80;
-      window.scrollTo({
-        top: offsetTop,
-        behavior: 'smooth'
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          const offsetTop = target.offsetTop - 80;
+          window.scrollTo({
+            top: offsetTop,
+            behavior: 'smooth'
+          });
+        }
       });
+    });
+
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver(function(entries) {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.opacity = '1';
+          entry.target.style.transform = 'translateY(0)';
+        }
+      });
+    }, observerOptions);
+
+    document.querySelectorAll('.feature-card, .honor-card').forEach(el => {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(30px)';
+      el.style.transition = 'all 0.6s ease';
+      observer.observe(el);
+    });
+
+    function abrirModalFitosanitario(treeId) {
+      const arbol = arboles.find(a => a.id == treeId);
+      
+      if (!arbol) {
+        console.error('Árbol no encontrado');
+        return;
+      }
+      
+      const modal = document.getElementById('modalFitosanitario');
+      const content = document.getElementById('fitosanitarioContent');
+      
+      if (arbol.estado_fitosanitario && arbol.estado_fitosanitario.trim() !== '') {
+        content.innerHTML = `
+          <div class="fitosanitario-content">
+            ${arbol.estado_fitosanitario}
+          </div>
+        `;
+      } else {
+        content.innerHTML = `
+          <div class="fitosanitario-empty">
+            <i class="fas fa-leaf"></i>
+            <p>No hay información fitosanitaria registrada para este árbol.</p>
+          </div>
+        `;
+      }
+      
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
     }
-  });
-});
 
-// Animation on scroll
-const observerOptions = {
-  threshold: 0.1,
-  rootMargin: '0px 0px -50px 0px'
-};
-
-const observer = new IntersectionObserver(function(entries) {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      entry.target.style.opacity = '1';
-      entry.target.style.transform = 'translateY(0)';
+    function cerrarModalFitosanitario() {
+      const modal = document.getElementById('modalFitosanitario');
+      modal.classList.remove('active');
+      document.body.style.overflow = 'auto';
     }
-  });
-}, observerOptions);
 
-// Observe elements for animation
-document.querySelectorAll('.feature-card, .honor-card').forEach(el => {
-  el.style.opacity = '0';
-  el.style.transform = 'translateY(30px)';
-  el.style.transition = 'all 0.6s ease';
-  observer.observe(el);
-});
+    document.getElementById('modalFitosanitario').addEventListener('click', function(e) {
+      if (e.target === this) {
+        cerrarModalFitosanitario();
+      }
+    });
 
-// Función para abrir el modal
-function abrirModalFitosanitario(treeId) {
-  const arbol = arboles.find(a => a.id == treeId);
-  
-  if (!arbol) {
-    console.error('Árbol no encontrado');
-    return;
-  }
-  
-  const modal = document.getElementById('modalFitosanitario');
-  const content = document.getElementById('fitosanitarioContent');
-  
-  if (arbol.estado_fitosanitario && arbol.estado_fitosanitario.trim() !== '') {
-    content.innerHTML = `
-      <div class="fitosanitario-content">
-        ${arbol.estado_fitosanitario}
-      </div>
-    `;
-  } else {
-    content.innerHTML = `
-      <div class="fitosanitario-empty">
-        <i class="fas fa-leaf"></i>
-        <p>No hay información fitosanitaria registrada para este árbol.</p>
-      </div>
-    `;
-  }
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        cerrarModalFitosanitario();
+      }
+    });
+
+    // Funciones para el modal de imagen
+function abrirImagenModal(imagenUrl, titulo) {
+  const modal = document.getElementById('imageModal');
+  const modalImg = document.getElementById('modalImage');
   
   modal.classList.add('active');
+  modalImg.src = imagenUrl;
+  modalImg.alt = titulo;
   document.body.style.overflow = 'hidden';
 }
 
-// Función para cerrar el modal
-function cerrarModalFitosanitario() {
-  const modal = document.getElementById('modalFitosanitario');
+function cerrarImagenModal() {
+  const modal = document.getElementById('imageModal');
   modal.classList.remove('active');
   document.body.style.overflow = 'auto';
 }
 
-// Cerrar modal al hacer clic fuera de él
-document.getElementById('modalFitosanitario').addEventListener('click', function(e) {
-  if (e.target === this) {
+// Cerrar con tecla Escape
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    cerrarImagenModal();
     cerrarModalFitosanitario();
   }
 });
 
-// Cerrar modal con tecla Escape
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') {
-    cerrarModalFitosanitario();
-  }
+// Evitar que el clic en la imagen cierre el modal
+document.getElementById('modalImage').addEventListener('click', function(e) {
+  e.stopPropagation();
 });
   </script>
 </body>
